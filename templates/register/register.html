@@ -1,0 +1,49 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<img src="{% static 'images/logo.png' %}" class="banner-logo" style="width: 75px; height: auto;">
+
+<div class="container">
+    <img src="{% static 'images/logo.png' %}" class="center-logo">
+    <h2>Share Your Story</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" id="regForm">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="input-group"><label>Full Name</label><input type="text" id="fn" name="fullname" required></div>
+            <div class="input-group"><label>Username</label><input type="text" id="un" name="username" required></div>
+            <div class="input-group"><label>Password</label><input type="password" id="p1" name="pass1" required></div>
+            <div class="input-group"><label>Confirm Password</label><input type="password" id="p2" name="pass2" required></div>
+        </div>
+        <button type="submit" class="btn-maroon" id="regBtn" disabled>Register</button>
+    </form>
+
+    <div class="footer-text">
+        Already have an account?<br>
+        <a href="{% url 'login' %}">Login</a>
+    </div>
+</div>
+
+<script>
+    const inputs = document.querySelectorAll('#regForm input[required]');
+    const btn = document.getElementById('regBtn');
+
+    function checkReg() {
+        let allFilled = true;
+        inputs.forEach(input => {
+            if (input.value.trim() === "") allFilled = false;
+        });
+        btn.disabled = !allFilled;
+    }
+
+    inputs.forEach(input => {
+        input.addEventListener('input', checkReg);
+    });
+</script>

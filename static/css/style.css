@@ -1,0 +1,170 @@
+/* Reset and Global Setup */
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 1. Banner Logo (Top Left) */
+.banner-logo {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 120px; /* Smaller as requested */
+}
+
+/* Logout link for Home screen */
+.logout-link {
+    position: absolute;
+    top: 25px;
+    right: 40px;
+    color: #8B0000;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* 2. Main Content Wrapper */
+.container {
+    text-align: center;
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+}
+
+.center-logo {
+    width: 110px;
+    margin-bottom: 5px;
+}
+
+h2 {
+    font-weight: 800;
+    margin: 0 0 35px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 22px;
+}
+
+/* 3. Form Layouts */
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Use this for Register (2 columns) */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 30px;
+    width: 100%;
+    max-width: 550px;
+    margin-bottom: 25px;
+}
+
+/* Use this for Login (1 column) */
+.form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: 25px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+input {
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    padding: 10px 15px;
+    text-align: center;
+    outline: none;
+    font-size: 14px;
+}
+
+/* 4. The Button */
+.btn-maroon {
+    background-color: #8B0000;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 0;
+    width: 320px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.footer-text {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #333;
+}
+
+.footer-text a {
+    color: #8B0000;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+/* Home Box */
+.content-box {
+    border: 1px solid #ccc;
+    height: 350px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #555;
+    margin-top: 20px;
+}
+
+/* Base styling for all alert boxes */
+.alert-error, .alert-success {
+    padding: 10px;
+    border-radius: 15px;
+    margin: 0 auto 20px auto;
+    font-size: 13px;
+    width: 100%;
+    max-width: 320px; 
+    text-align: center;
+    border: 1px solid;
+}
+
+/* ❌ Red style for Errors */
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+/* ✅ Green style for Success */
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+/* Gray out the button when disabled */
+.btn-maroon:disabled {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed;
+    border: 1px solid #999;
+}
