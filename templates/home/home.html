@@ -5,14 +5,21 @@
     <meta charset="UTF-8">
     <title>Home - PitchPoint</title>
     <link rel="stylesheet" href="{% static 'css/home/home.css' %}">
+    <style>
+        .messages-container { margin: 15px 0; }
+        .alert-box { padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 10px; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .card-type { font-size: 11px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.95; }
+    </style>
 </head>
 <body>
 
     <!-- Header Navigation -->
     <header class="header">
         <div class="logo-area">
-            <!-- Full text logo for top left -->
-            <img src="{% static 'images/logo.png' %}"  class="top-logo" alt="PITCH POINT.">
+            <img src="{% static 'images/logo.png' %}" class="top-logo" alt="PITCH POINT.">
         </div>
         <div class="nav-right">
             <a href="{% url 'user_profile:profile' %}">
@@ -26,10 +33,23 @@
     <!-- Main Content Container -->
     <main class="container">
         <div class="center-branding">
-            <!-- Round maroon circle logo for center -->
             <img src="{% static 'images/logo.png' %}" class="center-logo" alt="PitchPoint Icon">
-            <h2>WELCOME BACK {{ first_name|upper }}!</h2>
+            {% if user.is_authenticated %}
+                <h2>WELCOME BACK {{ user.name|upper }}!</h2>
+            {% else %}
+                <h2>WELCOME BACK GUEST!</h2>
+            {% endif %}
         </div>
+
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert-box alert-{% if message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}success{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <section class="pitches-section">
             <h3 class="section-title">OPEN PITCHES</h3>
@@ -37,9 +57,22 @@
                 <div class="pitches-grid">
                     {% for pitch in pitches %}
                         <div class="pitch-card">
-                            <h4 class="card-title">{{ pitch.title|upper }}</h4>
-                            <p class="card-date">{{ pitch.date|date:"F d, Y"|upper }} | {{ pitch.start_time|time:"g:i A" }}</p>
-                            <button class="btn-view-more">VIEW MORE</button>
+                            <div>
+                                <h4 class="card-title">{{ pitch.pitch_title|upper }}</h4>
+                                <p class="card-date">{{ pitch.target_date|date:"F d, Y"|upper }} | {{ pitch.target_time|time:"g:i A" }}</p>
+                                <p class="card-type"><strong>TYPE:</strong> {{ pitch.pitch_type|upper }}</p>
+                            </div>
+                            <!-- Updated button with data attributes -->
+                            <button class="btn-view-more view-details-btn"
+                                    data-id="{{ pitch.pitch_id }}"
+                                    data-title="{{ pitch.pitch_title }}"
+                                    data-type="{{ pitch.pitch_type }}"
+                                    data-date="{{ pitch.target_date|date:'F d, Y' }}"
+                                    data-time="{{ pitch.target_time|time:'g:i A' }}"
+                                    data-details="{{ pitch.additional_details|default:'No additional details provided.' }}"
+                                    data-pdf="{{ pitch.pdf_letter_url|default:'' }}">
+                                VIEW MORE
+                            </button>
                         </div>
                     {% empty %}
                         <p class="no-pitches">No open pitches available.</p>
@@ -51,7 +84,91 @@
         <button id="openModalBtn" class="floating-add-btn">+</button>
     </main>
 
-    <!-- Modal setup remains identical -->
-    <script src="{% static 'js/home/home.js' %}"></script>
+    <!-- Modal 1: Pitch Submission -->
+    <div id="pitchModal" class="modal-overlay">
+        <div class="modal-content">
+            <span id="closeModalBtn" class="close-btn">&times;</span>
+            <h3 class="modal-title">SUBMIT A NEW PITCH</h3>
+            <form method="POST" action="{% url 'home:home' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action_type" value="create_pitch">
+                <div class="modal-grid">
+                    <div class="modal-col">
+                        <div class="input-group">
+                            <label for="pitch_title">PITCH TITLE</label>
+                            <input type="text" id="pitch_title" name="pitch_title" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="pitch_type">PITCH TYPE</label>
+                            <input type="text" id="pitch_type" name="pitch_type" placeholder="e.g. Story, Event, Article" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="pdf_file">ATTACH PDF LETTER (OPTIONAL)</label>
+                            <input type="file" id="pdf_file" name="pdf_file" accept=".pdf">
+                        </div>
+                    </div>
+                    <div class="modal-col">
+                        <div class="inline-inputs dual-inputs">
+                            <div class="input-group">
+                                <label for="target_date">TARGET DATE</label>
+                                <input type="date" id="target_date" name="target_date" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="target_time">TARGET TIME</label>
+                                <input type="time" id="target_time" name="target_time" required>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="additional_details">ADDITIONAL DETAILS</label>
+                            <input type="text" id="additional_details" name="additional_details" placeholder="Brief pitch context...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-submit">SUBMIT PITCH</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Pitch Details & Volunteer Action -->
+    <div id="viewPitchModal" class="modal-overlay">
+        <div class="modal-content">
+            <span id="closeViewModalBtn" class="close-btn">&times;</span>
+            <h3 id="modalPitchTitle" class="modal-title">PITCH DETAILS</h3>
+            
+            <div class="modal-grid">
+                <div class="modal-col">
+                    <div class="input-group">
+                        <label>PITCH TYPE</label>
+                        <p id="modalPitchType" style="color: white; font-weight: bold;"></p>
+                    </div>
+                    <div class="input-group">
+                        <label>SCHEDULE</label>
+                        <p id="modalPitchSchedule" style="color: white; font-size: 13px;"></p>
+                    </div>
+                    <div id="modalPdfContainer" style="margin-top: 10px;"></div>
+                </div>
+                <div class="modal-col">
+                    <div class="input-group">
+                        <label>ADDITIONAL DETAILS</label>
+                        <p id="modalPitchDetails" style="color: #ccc; font-size: 12px; margin-top: 4px; line-height: 1.4;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" action="{% url 'home:home' %}" style="margin-top: 20px;">
+                {% csrf_token %}
+                <input type="hidden" name="action_type" value="volunteer">
+                <input type="hidden" id="modalPitchId" name="pitch_id" value="">
+                
+                <div class="modal-footer">
+                    <button type="submit" class="btn-submit" style="background-color: #8B0000;">VOLUNTEER FOR THIS PITCH</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+   <script src="{% static 'js/home/home.js' %}?v=1.1"></script>
 </body>
 </html>

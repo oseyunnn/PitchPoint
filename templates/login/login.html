@@ -3,7 +3,7 @@
 <img src="{% static 'images/logo.png' %}" class="banner-logo" style="width: 75px; height: auto;">
 
 <div class="container">
-    <img src="{% static 'images/logo.png' %}" class="center-logo">
+    <img src="{% static 'images/logo.png' %}" class="center-logo" alt="PitchPoint Icon">
     <h2>Welcome Back!</h2>
 
     <!-- Error messages only show if Django sends them after a POST attempt -->
@@ -18,12 +18,14 @@
     <form method="POST" id="loginForm">
         {% csrf_token %}
         <div class="form-stack">
+            <!-- Email field mapped to UserAccount.email -->
             <div class="input-group">
-                <label>Username</label>
-                <input type="text" name="username" id="uname" required>
+                <label for="email">Email</label>
+                <input type="email" name="email" id="email" required>
             </div>
+            <!-- Password field mapped to AbstractBaseUser password -->
             <div class="input-group">
-                <label>Password</label>
+                <label for="pword">Password</label>
                 <input type="password" name="password" id="pword" required>
             </div>
             <button type="submit" class="btn-maroon" id="submitBtn" disabled>Login</button>
@@ -32,24 +34,24 @@
 
     <div class="footer-text">
         No Account?<br>
-        <a href="{% url 'register' %}">Register</a>
+        <a href="{% url 'register:register' %}">Register</a>
     </div>
 </div>
 
 <script>
-    const uname = document.getElementById('uname');
+    const email = document.getElementById('email');
     const pword = document.getElementById('pword');
     const btn = document.getElementById('submitBtn');
 
     function checkInputs() {
         // Enable button only if both fields have text
-        if (uname.value.trim() !== "" && pword.value.trim() !== "") {
+        if (email.value.trim() !== "" && pword.value.trim() !== "") {
             btn.disabled = false;
         } else {
             btn.disabled = true;
         }
     }
 
-    uname.addEventListener('input', checkInputs);
+    email.addEventListener('input', checkInputs);
     pword.addEventListener('input', checkInputs);
 </script>

@@ -153,3 +153,8 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+SUPABASE_URL = "https://ryjwkybievjhkmjapwpj.supabase.co"
+
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5andreWJpZXZqaGttamFwd3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NDQzOTYsImV4cCI6MjEwMzIyMDM5Nn0.q2cLq4Ew_v71qwQr5k9ap92qEGdWubhL4rn3CS0wU6w" 
+
+SUPABASE_BUCKET = "pitch-letters"
