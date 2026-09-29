@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings - PitchPoint</title>
+    <!-- CSS File -->
+    <link rel="stylesheet" href="{% static 'css/user_settings/settings.css' %}">
+</head>
+<body>
+
+    <header class="header">
+        <a href="{% url 'home:home' %}">
+            <img src="{% static 'images/logo.png' %}" class="top-logo" alt="PitchPoint Logo">
+        </a>
+        <div class="nav-right">
+            <a href="{% url 'user_settings:settings' %}">
+                <img src="{% static 'images/settings.png' %}" class="nav-icon" alt="Settings">
+            </a>
+            <img src="{% static 'images/notifications.png' %}" class="nav-icon" alt="Notifications">
+            <a href="{% url 'login:login' %}" class="logout-link">Logout</a>
+        </div>
+    </header>
+
+    <main class="settings-container">
+        <h2 class="main-title">SETTINGS</h2>
+
+        <div class="settings-layout">
+            <!-- Sidebar Navigation -->
+            <aside class="settings-sidebar">
+                <ul>
+                    <li class="active">PERSONAL INFORMATION</li>
+                    <li>DISPLAY MODE</li>
+                    <li>DEACTIVATE/DELETE</li>
+                </ul>
+            </aside>
+
+            <!-- Main Settings Card -->
+            <section class="settings-card">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Username Field -->
+                <form method="POST" class="field-group">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_username">
+                    <div class="label-header">
+                        <label>USERNAME:</label>
+                        <button type="button" class="btn-action toggle-btn">UPDATE</button>
+                    </div>
+                    <input type="text" name="username" value="{{ username }}" class="read-only-input" readonly required>
+                </form>
+
+                <!-- Position Field -->
+                <form method="POST" class="field-group">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_position">
+                    <div class="label-header">
+                        <label>POSITION</label>
+                        <button type="button" class="btn-action toggle-btn">UPDATE</button>
+                    </div>
+                    <input type="text" name="position" value="{{ position }}" class="read-only-input" readonly required>
+                </form>
+
+                <!-- Profile Picture Field -->
+                <div class="field-group">
+                    <label>PROFILE PICTURE</label>
+                    <div class="avatar-row">
+                        <div class="avatar-circle"></div>
+                        <button type="button" class="btn-action">UPDATE</button>
+                    </div>
+                </div>
+
+                <!-- Password Block (Toggles into 3 inputs) -->
+                <form method="POST" id="passwordBlock" class="field-group">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_password">
+
+                    <!-- Initial State -->
+                    <div id="passInitial">
+                        <div class="label-header">
+                            <label>PASSWORD</label>
+                            <button type="button" id="btnUpdatePass" class="btn-action">UPDATE</button>
+                        </div>
+                        <input type="password" value="********" class="read-only-input pass-asterisk" readonly>
+                    </div>
+
+                    <!-- Expanded State (Hidden by default) -->
+                    <div id="passExpanded" style="display: none;">
+                        <div class="label-header">
+                            <label>OLD PASSWORD:</label>
+                            <button type="submit" class="btn-action btn-save">SAVE</button>
+                        </div>
+                        <input type="password" name="old_password" placeholder="*******" class="editable-input" required>
+
+                        <div class="label-header" style="margin-top: 15px;">
+                            <label>NEW PASSWORD:</label>
+                        </div>
+                        <input type="password" name="new_password" placeholder="*******" class="editable-input" required>
+
+                        <div class="label-header" style="margin-top: 15px;">
+                            <label>CONFIRM PASSWORD:</label>
+                        </div>
+                        <input type="password" name="confirm_password" placeholder="*******" class="editable-input" required>
+                    </div>
+                </form>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- JS File -->
+    <script src="{% static 'js/user_settings/settings.js' %}"></script>
+</body>
+</html>

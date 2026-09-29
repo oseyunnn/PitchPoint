@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile - PitchPoint</title>
+    <link rel="stylesheet" href="{% static 'css/user_profile/user_profile.css' %}">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    {% load static %}
+    <header class="header">
+        <div class="logo-area">
+            <a href="{% url 'home:home' %}">
+                <img src="{% static 'images/logo.png' %}" class="top-logo" alt="PitchPoint Logo">
+            </a>
+        </div>
+        <div class="nav-right">
+            <!-- Settings Icon redirecting to User Settings Page -->
+            <a href="{% url 'user_settings:settings' %}">
+                <img src="{% static 'images/settings.png' %}" class="nav-icon" alt="Settings">
+            </a>
+            <!-- Notifications Icon -->
+            <img src="{% static 'images/notifications.png' %}" class="nav-icon" alt="Notifications">
+            <!-- Logout Link -->
+            <a href="{% url 'login:login' %}" class="logout-link">Logout</a>
+        </div>
+    </header>
+    <!-- Main Container -->
+    <main class="container">
+        <!-- User Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar"></div>
+            <h2 class="user-name">{{ full_name|upper }}</h2>
+            <p class="user-meta">@{{ username }} | {{ position|upper }}</p>
+        </div>
+
+        <!-- Coverages Section -->
+        <section class="coverages-section">
+            <h3 class="section-title">MY INCOMING COVERAGES</h3>
+            <div class="coverages-box">
+                <div class="coverages-grid">
+                    {% for pitch in pitches %}
+                        <div class="pitch-card">
+                            <h4 class="card-title">{{ pitch.title|upper }}</h4>
+                            <p class="card-date">{{ pitch.date|date:"F d, Y"|upper }} | {{ pitch.start_time|time:"g:i A" }}</p>
+                            <button class="btn-view-more" 
+                                    data-title="{{ pitch.title }}"
+                                    data-date="{{ pitch.date|date:'F d, Y' }}"
+                                    data-time="{{ pitch.start_time|time:'g:i A' }} - {{ pitch.end_time|time:'g:i A' }}"
+                                    data-type="{{ pitch.pitch_type }}"
+                                    data-org="{{ pitch.organization }}"
+                                    data-email="{{ pitch.active_email }}"
+                                    data-id="{{ pitch.id_number }}"
+                                    data-contact="{{ pitch.contact_number }}">
+                                VIEW MORE
+                            </button>
+                        </div>
+                    {% empty %}
+                        <p class="no-pitches">No incoming coverages assigned.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Dark Details Modal Popup -->
+    <div id="detailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <span id="closeModalBtn" class="close-btn">&times;</span>
+            <h3 class="modal-title">COVERAGE DETAILS</h3>
+
+            <div class="modal-details-grid">
+                <div class="detail-group full-width">
+                    <label>TITLE</label>
+                    <div class="detail-value" id="modalTitle"></div>
+                </div>
+
+                <div class="detail-group">
+                    <label>DATE</label>
+                    <div class="detail-value" id="modalDate"></div>
+                </div>
+
+                <div class="detail-group">
+                    <label>TIME</label>
+                    <div class="detail-value" id="modalTime"></div>
+                </div>
+
+                <div class="detail-group">
+                    <label>PITCH TYPE</label>
+                    <div class="detail-value" id="modalType"></div>
+                </div>
+
+                <div class="detail-group">
+                    <label>ORGANIZATION</label>
+                    <div class="detail-value" id="modalOrg"></div>
+                </div>
+
+                <div class="detail-group">
+                    <label>CONTACT EMAIL</label>
+                    <div class="detail-value" id="modalEmail"></div>
+                </div>
+
+                <div class="detail-group">
+                    <label>ID NUMBER</label>
+                    <div class="detail-value" id="modalId"></div>
+                </div>
+
+                <div class="detail-group full-width">
+                    <label>CONTACT NUMBER</label>
+                    <div class="detail-value" id="modalContact"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/user_profile/user_profile.js' %}"></script>
+</body>
+</html>

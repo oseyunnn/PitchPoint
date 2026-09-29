@@ -1,0 +1,232 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #fff;
+    color: #333;
+    min-height: 100vh;
+}
+
+/* Header Navbar */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+}
+
+.top-logo {
+    width: 130px;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-right .icon {
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.logout-link {
+    color: #8B0000;
+    font-weight: bold;
+    text-decoration: underline;
+    font-size: 15px;
+}
+
+/* Profile Section */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 20px 60px 20px;
+}
+
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.profile-avatar {
+    width: 140px;
+    height: 140px;
+    background-color: #6a1b0a;
+    border-radius: 50%;
+    margin-bottom: 15px;
+}
+
+.user-name {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.user-meta {
+    font-size: 13px;
+    color: #444;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+/* Coverages Box */
+.section-title {
+    color: #000;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+
+.coverages-box {
+    border: 1px solid #777;
+    padding: 25px;
+    min-height: 250px;
+}
+
+.coverages-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.pitch-card {
+    background-color: #8B0000;
+    color: white;
+    border-radius: 30px;
+    padding: 22px 15px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+}
+
+.card-title {
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.card-date {
+    font-size: 10px;
+    margin: 6px 0 10px 0;
+}
+
+.btn-view-more {
+    background-color: white;
+    color: #8B0000;
+    border: none;
+    border-radius: 15px;
+    padding: 6px 15px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    align-self: center;
+}
+
+.no-pitches {
+    color: #666;
+    font-size: 14px;
+    grid-column: span 4;
+}
+
+/* Dark Modal Overlay & Popup */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #262324;
+    color: white;
+    width: 90%;
+    max-width: 650px;
+    border-radius: 25px;
+    padding: 30px 40px;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    font-size: 22px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal-title {
+    text-align: center;
+    font-size: 18px;
+    letter-spacing: 1px;
+    margin-bottom: 25px;
+}
+
+.modal-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 25px;
+}
+
+.detail-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-group.full-width {
+    grid-column: span 2;
+}
+
+.detail-group label {
+    font-size: 10px;
+    color: #aaa;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.detail-value {
+    background-color: #383435;
+    padding: 10px 15px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #fff;
+    word-break: break-word;
+}
+
+.top-logo {
+    width: 70px;          /* Matches center logo */
+    height: 70px;         /* Matches center logo */
+    object-fit: contain;
+}
+
+/* Header Profile and Bell Icons */
+.nav-icon {
+    width: 70px;          /* Matches center logo */
+    height: 70px;         /* Matches center logo */
+    object-fit: contain;
+    cursor: pointer;
+}
+
+/* Center Logo */
+.center-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    margin-bottom: 12px;
+}

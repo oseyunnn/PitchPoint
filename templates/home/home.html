@@ -1,16 +1,57 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-<img src="{% static 'images/logo.png' %}" class="banner-logo" style="width: 75px; height: auto;">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home - PitchPoint</title>
+    <link rel="stylesheet" href="{% static 'css/home/home.css' %}">
+</head>
+<body>
 
-<a href="{% url 'logout' %}" class="logout-link">Logout</a>
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="logo-area">
+            <!-- Full text logo for top left -->
+            <img src="{% static 'images/logo.png' %}"  class="top-logo" alt="PITCH POINT.">
+        </div>
+        <div class="nav-right">
+            <a href="{% url 'user_profile:profile' %}">
+                <img src="{% static 'images/profile.png' %}" class="nav-icon" alt="Profile">
+            </a>
+            <img src="{% static 'images/notifications.png' %}" class="nav-icon" alt="Notifications">
+            <a href="{% url 'login:login' %}" class="logout-link">Logout</a>
+        </div>
+    </header>
 
-<div class="container">
-    <img src="{% static 'images/logo.png' %}" class="center-logo">
-    <h2>Welcome Back!</h2>
+    <!-- Main Content Container -->
+    <main class="container">
+        <div class="center-branding">
+            <!-- Round maroon circle logo for center -->
+            <img src="{% static 'images/logo.png' %}" class="center-logo" alt="PitchPoint Icon">
+            <h2>WELCOME BACK {{ first_name|upper }}!</h2>
+        </div>
 
-    <div class="content-box">
-        HOME
-    </div>
+        <section class="pitches-section">
+            <h3 class="section-title">OPEN PITCHES</h3>
+            <div class="pitches-box">
+                <div class="pitches-grid">
+                    {% for pitch in pitches %}
+                        <div class="pitch-card">
+                            <h4 class="card-title">{{ pitch.title|upper }}</h4>
+                            <p class="card-date">{{ pitch.date|date:"F d, Y"|upper }} | {{ pitch.start_time|time:"g:i A" }}</p>
+                            <button class="btn-view-more">VIEW MORE</button>
+                        </div>
+                    {% empty %}
+                        <p class="no-pitches">No open pitches available.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
 
-    
-</div>
+        <button id="openModalBtn" class="floating-add-btn">+</button>
+    </main>
+
+    <!-- Modal setup remains identical -->
+    <script src="{% static 'js/home/home.js' %}"></script>
+</body>
+</html>
