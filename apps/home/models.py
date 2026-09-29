@@ -1,18 +1,47 @@
+import uuid
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
-class PitchRequest(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pitches")
-    title = models.CharField(max_length=255)
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    pitch_type = models.CharField(max_length=100)
-    organization = models.CharField(max_length=255)
-    active_email = models.EmailField()
-    id_number = models.CharField(max_length=100)
-    contact_number = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
+class Pitch(models.Model):
+    pitch_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    submitter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="pitches",
+        null=True,
+        blank=True
+    )
+    guest_email = models.EmailField(
+        null=True,
+        blank=True
+    )
+    pitch_title = models.CharField(
+        max_length=255
+    )
+    pitch_type = models.CharField(
+        max_length=50
+    )
+    target_date = models.DateField()
+    target_time = models.TimeField()
+    pdf_letter_url = models.TextField(
+        null=True,
+        blank=True
+    )
+    additional_details = models.TextField(
+        null=True,
+        blank=True
+    )
+    submitted_at = models.DateTimeField(
+        auto_now_add=True
+    )
+    status = models.CharField(
+        max_length=30,
+        default="pending"
+    )
 
     def __str__(self):
-        return self.title
+        return self.pitch_title
