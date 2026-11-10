@@ -20,6 +20,8 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('apps.login.urls')),
+    path('about/', include('apps.about.urls', namespace='about')),
+    path('events/', include('apps.events.urls', namespace='events')),
     path('register/', include('apps.register.urls', namespace='register')), # Added namespace parameter
     path('home/', include('apps.home.urls')),
     path('user_profile/', include('apps.user_profile.urls')),

@@ -1,0 +1,11 @@
+{% load static %}
+<header class="site-header">
+    <a class="brand" href="{% url 'login:login' %}" aria-label="PitchPoint home">
+        <img src="{% static 'images/logo.png' %}" alt="">
+        <span>PITCH POINT.</span>
+    </a>
+    <nav class="site-nav" aria-label="Main navigation">
+        <a href="{% url 'about:about' %}"{% if active_page == 'about' %} aria-current="page"{% endif %}>About</a>
+        <a href="{% url 'events:events' %}"{% if active_page == 'events' %} aria-current="page"{% endif %}>Events</a>
+    </nav>
+</header>

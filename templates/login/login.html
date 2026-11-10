@@ -1,57 +1,51 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-<img src="{% static 'images/logo.png' %}" class="banner-logo" style="width: 75px; height: auto;">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <title>Sign In | PitchPoint</title>
+    <link rel="stylesheet" href="{% static 'css/public/public.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login/login.css' %}">
+</head>
+<body class="public-page">
+    {% include 'partials/public_nav.html' with active_page='login' %}
 
-<div class="container">
-    <img src="{% static 'images/logo.png' %}" class="center-logo" alt="PitchPoint Icon">
-    <h2>Welcome Back!</h2>
-
-    <!-- Error messages only show if Django sends them after a POST attempt -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert-{{ message.tags }}">
-                {{ message }}
+    <main class="login-main">
+        <section class="login-panel" aria-labelledby="login-title">
+            <div class="login-mark-wrap">
+                <img src="{% static 'images/logo.png' %}" class="login-mark" alt="PitchPoint">
             </div>
-        {% endfor %}
-    {% endif %}
+            <p class="panel-kicker">PITCHPOINT COMMUNITY</p>
+            <h1 id="login-title">Welcome back</h1>
+            <p class="panel-intro">Sign in to pick up where your next story begins.</p>
 
-    <form method="POST" id="loginForm">
-        {% csrf_token %}
-        <div class="form-stack">
-            <!-- Email field mapped to UserAccount.email -->
-            <div class="input-group">
-                <label for="email">Email</label>
-                <input type="email" name="email" id="email" required>
-            </div>
-            <!-- Password field mapped to AbstractBaseUser password -->
-            <div class="input-group">
-                <label for="pword">Password</label>
-                <input type="password" name="password" id="pword" required>
-            </div>
-            <button type="submit" class="btn-maroon" id="submitBtn" disabled>Login</button>
-        </div>
-    </form>
+            {% if messages %}
+                <div class="login-messages" aria-live="polite">
+                    {% for message in messages %}
+                        <p class="login-message login-message--{{ message.tags }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
-    <div class="footer-text">
-        No Account?<br>
-        <a href="{% url 'register:register' %}">Register</a>
-    </div>
-</div>
+            <form method="POST" id="loginForm" class="login-form">
+                {% csrf_token %}
+                <div class="field-group">
+                    <label for="email">Email address</label>
+                    <input type="email" name="email" id="email" autocomplete="email" placeholder="you@example.com" required>
+                </div>
+                <div class="field-group">
+                    <label for="pword">Password</label>
+                    <input type="password" name="password" id="pword" autocomplete="current-password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-submit">Sign in</button>
+            </form>
 
-<script>
-    const email = document.getElementById('email');
-    const pword = document.getElementById('pword');
-    const btn = document.getElementById('submitBtn');
+            <p class="register-prompt">New to PitchPoint? <a href="{% url 'register:register' %}">Create an account</a></p>
+        </section>
+    </main>
 
-    function checkInputs() {
-        // Enable button only if both fields have text
-        if (email.value.trim() !== "" && pword.value.trim() !== "") {
-            btn.disabled = false;
-        } else {
-            btn.disabled = true;
-        }
-    }
-
-    email.addEventListener('input', checkInputs);
-    pword.addEventListener('input', checkInputs);
-</script>
+    {% include 'partials/cityscape.html' %}
+</body>
+</html>

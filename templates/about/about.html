@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About | PitchPoint</title>
+    <link rel="stylesheet" href="{% static 'css/public/public.css' %}">
+    <link rel="stylesheet" href="{% static 'css/public/placeholder.css' %}">
+</head>
+<body class="public-page">
+    {% include 'partials/public_nav.html' with active_page='about' %}
+    <main class="placeholder-main">
+        <p class="placeholder-kicker">OUR STORY</p>
+        <h1>About PitchPoint</h1>
+        <p class="placeholder-copy">A place for good ideas to find their audience, and for student stories to make it into the world.</p>
+        <a class="placeholder-link" href="{% url 'login:login' %}">Back to sign in</a>
+    </main>
+    {% include 'partials/cityscape.html' %}
+</body>
+</html>

@@ -1,0 +1,65 @@
+.placeholder-main {
+    position: relative;
+    z-index: 1;
+    width: min(100% - 40px, 760px);
+    margin: clamp(80px, 16vh, 150px) auto 0;
+    padding-bottom: 180px;
+    text-align: center;
+    animation: placeholder-arrive 420ms ease-out both;
+}
+
+.placeholder-kicker {
+    margin: 0 0 10px;
+    color: var(--pitch-red);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.placeholder-main h1 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 38px;
+    line-height: 1.15;
+}
+
+.placeholder-copy {
+    max-width: 540px;
+    margin: 16px auto 24px;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.65;
+}
+
+.placeholder-link {
+    color: var(--pitch-red);
+    font-size: 14px;
+    font-weight: 800;
+    text-underline-offset: 4px;
+}
+
+@keyframes placeholder-arrive {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 560px) {
+    .placeholder-main {
+        margin-top: 90px;
+        padding-bottom: 120px;
+    }
+
+    .placeholder-main h1 {
+        font-size: 31px;
+    }
+
+    .placeholder-copy {
+        font-size: 14px;
+    }
+}
