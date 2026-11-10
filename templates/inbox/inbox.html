@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <title>Inbox | PitchPoint</title>
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'css/inbox/inbox.css' %}?v=1">
+</head>
+<body class="dashboard-page inbox-page">
+    <header class="dashboard-header">
+        <a class="dashboard-brand" href="{% url 'home:home' %}" aria-label="PitchPoint dashboard">
+            <img src="{% static 'images/logo.png' %}" alt="">
+            <span>ITCH POINT.</span>
+        </a>
+        <nav class="dashboard-nav" aria-label="Dashboard navigation">
+            <a href="{% url 'home:home' %}">Dashboard</a>
+            <a href="{% url 'home:home' %}#deliverables">Pitches</a>
+            <a class="is-current" href="{% url 'inbox:inbox' %}">Inbox{% if unread_count %}<span class="nav-count">{{ unread_count }}</span>{% endif %}</a>
+        </nav>
+        <a href="{% url 'login:logout' %}" class="dashboard-logout">Logout</a>
+    </header>
+
+    <main class="inbox-shell">
+        <div class="inbox-heading">
+            <div>
+                <p class="inbox-eyebrow">PITCHPOINT COMMUNITY</p>
+                <h1>Inbox</h1>
+                <p class="inbox-intro">Updates about your pitches and contributions.</p>
+            </div>
+            <span class="inbox-unread-count">{{ unread_count }} unread</span>
+        </div>
+
+        <section class="notification-list" aria-label="Notifications">
+            {% for notification in notifications %}
+                <article class="notification-item{% if not notification.is_read %} is-unread{% endif %}">
+                    <span class="notification-mark" aria-hidden="true">{{ notification.message|slice:":1"|upper }}</span>
+                    <div class="notification-copy">
+                        <p>{{ notification.message }}</p>
+                        {% if notification.pitch %}<span>{{ notification.pitch.pitch_title }}</span>{% endif %}
+                    </div>
+                    <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"M j, Y · g:i A" }}</time>
+                </article>
+            {% empty %}
+                <div class="inbox-empty">
+                    <span class="empty-mark" aria-hidden="true">P</span>
+                    <h2>You’re all caught up</h2>
+                    <p>Notifications about your activity will appear here.</p>
+                </div>
+            {% endfor %}
+        </section>
+        <a class="back-dashboard" href="{% url 'home:home' %}">Back to dashboard</a>
+    </main>
+</body>
+</html>

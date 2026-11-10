@@ -2,10 +2,108 @@ import uuid
 import urllib.request
 import urllib.error
 import json
+from datetime import timedelta
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.conf import settings
-from .models import Pitch, VolunteerRequest, VolunteerResponse
+from django.utils import timezone
+from .models import (
+    Assignment,
+    Comment,
+    Notification,
+    Pitch,
+    PitchEndorsement,
+    PitchReview,
+    VolunteerRequest,
+    VolunteerResponse,
+)
+
+
+COMPLETED_PITCH_STATUSES = ("complete", "completed", "done")
+CLOSED_PITCH_STATUSES = COMPLETED_PITCH_STATUSES + ("cancelled", "canceled")
+
+
+def _dashboard_context(user):
+    today = timezone.localdate()
+    future_pitches = Pitch.objects.filter(target_date__gte=today)
+    open_pitches = future_pitches.filter(status__in=("open", "pending"))
+    pitches = (open_pitches if open_pitches.exists() else future_pitches)
+    pitches = pitches.order_by("target_date", "target_time")[:12]
+    context = {
+        "pitches": pitches,
+        "today_tasks": [],
+        "unread_notifications": [],
+        "unread_count": 0,
+        "other_unread_count": 0,
+        "submitted_count": 0,
+        "assigned_count": 0,
+        "completed_count": 0,
+        "ongoing_count": 0,
+        "chart_points": [],
+        "chart_polyline": "",
+        "chart_max": 1,
+        "is_authenticated": user.is_authenticated,
+    }
+
+    chart_start = today - timedelta(days=41)
+    activity_counts = [0] * 6
+    if user.is_authenticated:
+        context["submitted_count"] = Pitch.objects.filter(submitter=user).count()
+        user_assignments = Assignment.objects.filter(assigned_user=user)
+        context["assigned_count"] = user_assignments.count()
+        context["completed_count"] = Pitch.objects.filter(
+            Q(submitter=user) | Q(assignments__assigned_user=user),
+            status__in=COMPLETED_PITCH_STATUSES,
+        ).distinct().count()
+        context["ongoing_count"] = Pitch.objects.filter(
+            assignments__assigned_user=user
+        ).exclude(status__in=CLOSED_PITCH_STATUSES).distinct().count()
+        context["today_tasks"] = Pitch.objects.filter(
+            Q(submitter=user) | Q(assignments__assigned_user=user),
+            target_date__gte=today,
+        ).distinct().order_by("target_date", "target_time")[:3]
+
+        notifications = Notification.objects.filter(
+            recipient=user,
+            is_read=False,
+        ).order_by("-created_at")
+        context["unread_count"] = notifications.count()
+        context["unread_notifications"] = notifications[:3]
+        context["other_unread_count"] = max(context["unread_count"] - 3, 0)
+
+        chart_since = timezone.now() - timedelta(days=42)
+        activity_sources = (
+            Pitch.objects.filter(submitter=user, submitted_at__gte=chart_since).values_list("submitted_at", flat=True),
+            Assignment.objects.filter(assigned_user=user, assigned_at__gte=chart_since).values_list("assigned_at", flat=True),
+            Comment.objects.filter(author=user, created_at__gte=chart_since).values_list("created_at", flat=True),
+            PitchReview.objects.filter(reviewer=user, reviewed_at__gte=chart_since).values_list("reviewed_at", flat=True),
+            PitchEndorsement.objects.filter(endorser=user, endorsed_at__gte=chart_since).values_list("endorsed_at", flat=True),
+            VolunteerResponse.objects.filter(volunteer=user, responded_at__gte=chart_since).values_list("responded_at", flat=True),
+        )
+        for activity_source in activity_sources:
+            for created_at in activity_source:
+                week_index = min((created_at.date() - chart_start).days // 7, 5)
+                if week_index >= 0:
+                    activity_counts[week_index] += 1
+
+    chart_max = max(activity_counts) or 1
+    chart_points = []
+    for index, count in enumerate(activity_counts):
+        point_date = chart_start + timedelta(days=index * 7)
+        chart_points.append({
+            "x": 18 + index * 53,
+            "y": 104 - round(count / chart_max * 78),
+            "count": count,
+            "label": point_date.strftime("%b %d"),
+        })
+
+    context["chart_points"] = chart_points
+    context["chart_polyline"] = " ".join(
+        f"{point['x']},{point['y']}" for point in chart_points
+    )
+    context["chart_max"] = chart_max
+    return context
 
 def home_view(request):
     if request.method == "POST":
@@ -56,6 +154,7 @@ def home_view(request):
         # ------------------------------------
         pitch_title = request.POST.get("pitch_title")
         pitch_type = request.POST.get("pitch_type")
+        location = request.POST.get("location", "").strip()
         target_date = request.POST.get("target_date")
         target_time = request.POST.get("target_time")
         additional_details = request.POST.get("additional_details", "")
@@ -100,6 +199,7 @@ def home_view(request):
             submitter=submitter,
             pitch_title=pitch_title,
             pitch_type=pitch_type,
+            location=location,
             target_date=target_date,
             target_time=target_time,
             pdf_letter_url=pdf_letter_url,
@@ -116,5 +216,4 @@ def home_view(request):
         messages.success(request, "Pitch submitted successfully!")
         return redirect("home:home")
 
-    pitches = Pitch.objects.filter(status="open") if Pitch.objects.filter(status="open").exists() else Pitch.objects.all()
-    return render(request, "home/home.html", {"pitches": pitches})
+    return render(request, "home/dashboard.html", _dashboard_context(request.user))

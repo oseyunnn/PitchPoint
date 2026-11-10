@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.register",
     "apps.home",
+    "apps.inbox",
     "apps.user_profile",
     "apps.user_settings",
 ]

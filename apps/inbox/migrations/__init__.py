@@ -1,0 +1,1 @@
+"""Inbox app migrations package."""

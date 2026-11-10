@@ -24,6 +24,7 @@ urlpatterns = [
     path('events/', include('apps.events.urls', namespace='events')),
     path('register/', include('apps.register.urls', namespace='register')), # Added namespace parameter
     path('home/', include('apps.home.urls')),
+    path('inbox/', include('apps.inbox.urls', namespace='inbox')),
     path('user_profile/', include('apps.user_profile.urls')),
     path('user_settings/', include('apps.user_settings.urls')),
 ]

@@ -26,6 +26,11 @@ class Pitch(models.Model):
     pitch_type = models.CharField(
         max_length=50
     )
+    location = models.CharField(
+        max_length=255,
+        blank=True,
+        default=""
+    )
     target_date = models.DateField()
     target_time = models.TimeField()
     pdf_letter_url = models.TextField(
