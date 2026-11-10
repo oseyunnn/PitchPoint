@@ -7,11 +7,20 @@ UserAccount = get_user_model()
 def register_view(request):
     if request.method == "POST":
         name = request.POST.get("name")
+        username = request.POST.get("username", "").strip()
         email = request.POST.get("email")
-        role = request.POST.get("role")
+        role = request.POST.get("role") or "student"
         position = request.POST.get("position", "")
         pass1 = request.POST.get("pass1")
         pass2 = request.POST.get("pass2")
+
+        if not username:
+            messages.error(request, "Please choose a username.")
+            return render(request, "register/register.html")
+
+        if UserAccount.objects.filter(username__iexact=username).exists():
+            messages.error(request, "That username is already taken.")
+            return render(request, "register/register.html")
 
         if pass1 != pass2:
             messages.error(request, "Passwords do not match.")
@@ -26,6 +35,7 @@ def register_view(request):
             email=email,
             password=pass1,
             name=name,
+            username=username,
             role=role,
             position=position
         )

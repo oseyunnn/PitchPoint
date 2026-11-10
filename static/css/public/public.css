@@ -25,7 +25,7 @@ body.public-page {
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 38px;
+    gap: 24px;
     width: max-content;
     max-width: calc(100% - 40px);
     min-height: 64px;
@@ -61,6 +61,12 @@ body.public-page {
     display: flex;
     align-items: center;
     gap: 30px;
+    display: none;
+}
+
+.site-header:hover .site-nav,
+.site-header:focus-within .site-nav {
+    display: flex;
 }
 
 .site-nav a {
@@ -75,8 +81,27 @@ body.public-page {
     color: var(--pitch-red);
 }
 
+.site-login-link {
+    position: fixed;
+    z-index: 3;
+    top: 39px;
+    right: clamp(20px, 4vw, 52px);
+    color: #111;
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: color 150ms ease;
+}
+
+.site-login-link:hover,
+.site-login-link:focus-visible {
+    color: var(--pitch-red);
+}
+
 .site-nav a:focus-visible,
 .brand:focus-visible,
+.site-nav:focus-within,
+.site-login-link:focus-visible,
 .placeholder-link:focus-visible {
     outline: 2px solid var(--pitch-red);
     outline-offset: 4px;
@@ -134,7 +159,7 @@ body.public-page {
 
 @media (max-width: 560px) {
     .site-header {
-        gap: 18px;
+        gap: 14px;
         min-height: 58px;
         margin: 12px auto 0 12px;
         padding-right: 14px;
@@ -150,10 +175,20 @@ body.public-page {
     }
 
     .site-nav {
-        gap: 15px;
+        gap: 12px;
     }
 
     .site-nav a {
+        font-size: 13px;
+    }
+
+    .site-header .brand span {
+        font-size: 14px;
+    }
+
+    .site-login-link {
+        top: 29px;
+        right: 16px;
         font-size: 13px;
     }
 

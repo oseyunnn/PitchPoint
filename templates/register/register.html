@@ -3,86 +3,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Register - PitchPoint</title>
-    <link rel="stylesheet" href="{% static 'css/register/register.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#a71308">
+    <title>Create Account | PitchPoint</title>
+    <link rel="stylesheet" href="{% static 'css/public/public.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/register/register.css' %}?v=2">
 </head>
-<body>
-
-    <!-- Updated to pull from static/images/ directly -->
-    <img src="{% static 'images/logo.png' %}" class="banner-logo" alt="PitchPoint Banner Logo">
-
-    <div class="container">
-        <!-- Center Round Logo -->
-        <img src="{% static 'images/logo.png' %}" class="center-logo" alt="PitchPoint Icon">
-        <h2>Share Your Story</h2>
-
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <form method="POST" id="regForm">
-            {% csrf_token %}
-            <div class="form-grid">
-                <!-- Full Name (mapped to UserAccount.name) -->
-                <div class="input-group">
-                    <label for="fn">Full Name</label>
-                    <input type="text" id="fn" name="name" required>
-                </div>
-
-                <!-- Role (mapped to UserAccount.role) -->
-                <div class="input-group">
-                    <label for="role">Role</label>
-                    <select id="role" name="role" required class="select-input">
-                        <option value="" disabled selected></option>
-                        <option value="student">Student</option>
-                        <option value="faculty">Faculty</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-
-                <!-- Position (mapped to UserAccount.position) -->
-                <div class="input-group">
-                    <label for="pos">Position</label>
-                    <select id="pos" name="position" class="select-input">
-                        <option value="" disabled selected></option>
-                        <option value="Developer">Developer</option>
-                        <option value="Designer">Designer</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-
-                <!-- Email (mapped to UserAccount.email) -->
-                <div class="input-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-
-                <!-- Password 1 -->
-                <div class="input-group">
-                    <label for="p1">Password</label>
-                    <input type="password" id="p1" name="pass1" required>
-                </div>
-
-                <!-- Password 2 -->
-                <div class="input-group">
-                    <label for="p2">Confirm Password</label>
-                    <input type="password" id="p2" name="pass2" required>
-                </div>
+<body class="register-page">
+    <main class="register-layout">
+        <section class="register-art" aria-label="PitchPoint">
+            {% include 'partials/public_nav.html' with active_page='register' %}
+            <div class="brand-orbit" aria-hidden="true">
+                <svg class="network-lines" viewBox="0 0 1000 800" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M80 168 360 152 210 280 80 352 210 280 740 272 910 184 740 272 920 368 790 488 130 472 50 576 280 600 130 704 610 696 870 688 910 592 870 688" />
+                    <path d="M210 280 500 400 740 272 790 488 500 400 280 600 610 696" />
+                </svg>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
             </div>
-            <button type="submit" class="btn-maroon" id="regBtn" disabled>Register</button>
-        </form>
+            <img class="register-hero-mark" src="{% static 'images/logo.png' %}" alt="PitchPoint mark">
+        </section>
 
-        <div class="footer-text">
-            Already have an account?<br>
-            <a href="{% url 'login:login' %}">Login</a>
-        </div>
-    </div>
+        <section class="register-panel" aria-labelledby="register-title">
+            <div class="register-content">
+                <p class="register-eyebrow">PITCHPOINT COMMUNITY</p>
+                <h1 id="register-title">Join the movement</h1>
+                <p class="register-intro">Make room for your next idea.</p>
 
-    <script src="{% static 'js/register/register.js' %}"></script>
+                {% if messages %}
+                    <div class="register-messages" aria-live="polite">
+                        {% for message in messages %}
+                            <p class="register-message register-message--{{ message.tags }}">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="POST" id="regForm" class="register-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="role" value="student">
+
+                    <div class="register-field">
+                        <label for="fn">Full name</label>
+                        <input type="text" id="fn" name="name" autocomplete="name" required>
+                    </div>
+                    <div class="register-field">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" maxlength="50" autocomplete="username" required>
+                    </div>
+                    <div class="register-field">
+                        <label for="position">Position</label>
+                        <select id="position" name="position" required>
+                            <option value="" disabled selected>Select your position</option>
+                            <option value="Writer">Writer</option>
+                            <option value="Artist">Artist</option>
+                            <option value="Photojournalist">Photojournalist</option>
+                            <option value="Researcher">Researcher</option>
+                            <option value="Social Media Associate">Social Media Associate</option>
+                            <option value="Website Associate">Website Associate</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="register-field">
+                        <label for="email">TTSP email</label>
+                        <input type="email" id="email" name="email" autocomplete="email" required>
+                    </div>
+                    <div class="register-field">
+                        <label for="p1">Password</label>
+                        <input type="password" id="p1" name="pass1" autocomplete="new-password" required>
+                    </div>
+                    <div class="register-field">
+                        <label for="p2">Confirm password</label>
+                        <input type="password" id="p2" name="pass2" autocomplete="new-password" required>
+                    </div>
+                    <button type="submit" class="register-submit" id="regBtn" disabled>Create account</button>
+                </form>
+
+                <p class="register-login">Already have an account? <a href="{% url 'login:login' %}">Log in</a></p>
+            </div>
+        </section>
+    </main>
+    <script src="{% static 'js/register/register.js' %}" defer></script>
 </body>
 </html>

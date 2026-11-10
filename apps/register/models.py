@@ -45,6 +45,13 @@ class UserAccount(AbstractBaseUser):
         max_length=255
     )
 
+    username = models.CharField(
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True
+    )
+
     email = models.EmailField(
         unique=True
     )
