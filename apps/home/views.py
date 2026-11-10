@@ -3,6 +3,7 @@ import urllib.request
 import urllib.error
 import json
 from datetime import timedelta
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
@@ -15,6 +16,7 @@ from .models import (
     Notification,
     Pitch,
     PitchEndorsement,
+    PitchRoleNeed,
     PitchReview,
     WorkSubmission,
     VolunteerRequest,
@@ -24,6 +26,16 @@ from .models import (
 
 COMPLETED_PITCH_STATUSES = ("complete", "completed", "done")
 CLOSED_PITCH_STATUSES = COMPLETED_PITCH_STATUSES + ("cancelled", "canceled")
+PITCH_ROLE_CHOICES = (
+    ("writer", "Writer"),
+    ("artist", "Artist"),
+    ("photojournalist", "Photojournalist"),
+    ("researcher", "Researcher"),
+    ("social-media-associate", "Social Media Associate"),
+    ("website-associate", "Website Associate"),
+    ("editor", "Editor"),
+    ("other", "Other"),
+)
 
 
 def _dashboard_context(user):
@@ -46,6 +58,9 @@ def _dashboard_context(user):
     pitches = pitches.distinct().order_by("target_date", "target_time")[:12]
     context = {
         "pitches": pitches,
+        "pitch_role_choices": [
+            {"key": key, "label": label} for key, label in PITCH_ROLE_CHOICES
+        ],
         "previous_submissions": [],
         "today_tasks": [],
         "unread_notifications": [],
@@ -190,6 +205,204 @@ def _dashboard_context(user):
         peak_index = activity_counts.index(max(activity_counts))
         context["chart_peak_week"] = chart_points[peak_index]["label"]
     return context
+
+
+def _available_role_slots(pitch, role_need):
+    normalized_role = role_need.role.strip().casefold()
+    assigned_user_ids = {
+        assignment.assigned_user_id
+        for assignment in pitch.dashboard_assignments
+        if (assignment.assigned_role or "").strip().casefold() == normalized_role
+    }
+    active_response_user_ids = {
+        response.volunteer_id
+        for volunteer_request in pitch.dashboard_volunteer_requests
+        for response in volunteer_request.dashboard_responses
+        if response.role.strip().casefold() == normalized_role
+        and response.response_status.strip().casefold() in ("pending", "accepted", "approved")
+    }
+    occupied_slots = len(assigned_user_ids | active_response_user_ids)
+    return max(role_need.slots_needed - occupied_slots, 0)
+
+
+def pitches_view(request):
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "Please sign in to volunteer for a pitch.")
+            return redirect("login:login")
+
+        pitch_id = request.POST.get("pitch_id")
+        role = (request.POST.get("role") or "").strip()
+        pitch = get_object_or_404(
+            Pitch.objects.prefetch_related(
+                "role_needs",
+                "assignments",
+                Prefetch(
+                    "volunteer_requests",
+                    queryset=VolunteerRequest.objects.prefetch_related("responses"),
+                    to_attr="dashboard_volunteer_requests",
+                ),
+            ),
+            pitch_id=pitch_id,
+        )
+        normalized_position = (getattr(request.user, "position", "") or "").strip().casefold()
+        if not role or role.casefold() != normalized_position:
+            messages.error(request, "You can only volunteer for openings matching your position.")
+            return redirect("home:pitches")
+        if pitch.status.strip().casefold() not in ("open", "pending") or pitch.target_date < timezone.localdate():
+            messages.error(request, "This pitch is no longer accepting volunteers.")
+            return redirect("home:pitches")
+
+        role_need = next(
+            (
+                need for need in pitch.role_needs.all()
+                if need.role.strip().casefold() == normalized_position
+            ),
+            None,
+        )
+        if role_need is None:
+            messages.error(request, "This pitch does not have an opening for your position.")
+            return redirect("home:pitches")
+        duplicate_request = False
+        no_slots = False
+        try:
+            with transaction.atomic():
+                locked_pitch = Pitch.objects.select_for_update().get(pk=pitch.pk)
+                locked_pitch.dashboard_assignments = list(
+                    Assignment.objects.filter(pitch=locked_pitch)
+                )
+                locked_pitch.dashboard_volunteer_requests = list(
+                    VolunteerRequest.objects.filter(pitch=locked_pitch).prefetch_related("responses")
+                )
+                for volunteer_request in locked_pitch.dashboard_volunteer_requests:
+                    volunteer_request.dashboard_responses = list(volunteer_request.responses.all())
+                locked_need = get_object_or_404(
+                    PitchRoleNeed.objects.filter(pitch=locked_pitch),
+                    role__iexact=role_need.role,
+                )
+                existing_response = VolunteerResponse.objects.filter(
+                    volunteer_request__pitch=locked_pitch,
+                    volunteer=request.user,
+                    role__iexact=locked_need.role,
+                ).exists()
+                duplicate_request = existing_response
+                no_slots = _available_role_slots(locked_pitch, locked_need) < 1
+                if not duplicate_request and not no_slots:
+                    volunteer_request = VolunteerRequest.objects.filter(pitch=locked_pitch).first()
+                    if volunteer_request is None:
+                        volunteer_request = VolunteerRequest.objects.create(
+                            pitch=locked_pitch,
+                            requester=locked_pitch.submitter or request.user,
+                            status="open",
+                        )
+                    VolunteerResponse.objects.create(
+                        volunteer_request=volunteer_request,
+                        volunteer=request.user,
+                        role=locked_need.role,
+                    )
+        except IntegrityError:
+            duplicate_request = True
+        if duplicate_request:
+            messages.info(request, "You have already requested this role for the pitch.")
+        elif no_slots:
+            messages.error(request, "The available spots for this position have been filled.")
+        else:
+            messages.success(request, f"Your request to volunteer as {role_need.role} was sent.")
+        return redirect("home:pitches")
+
+    search_query = request.GET.get("q", "").strip()
+    pitches = Pitch.objects.prefetch_related(
+        "role_needs",
+        "assignments",
+        Prefetch(
+            "volunteer_requests",
+            queryset=VolunteerRequest.objects.prefetch_related("responses"),
+            to_attr="dashboard_volunteer_requests",
+        ),
+    ).order_by("target_date", "target_time", "pitch_title")
+    if search_query:
+        pitches = pitches.filter(
+            Q(pitch_title__icontains=search_query)
+            | Q(pitch_type__icontains=search_query)
+            | Q(location__icontains=search_query)
+            | Q(additional_details__icontains=search_query)
+        )
+
+    normalized_position = (
+        (getattr(request.user, "position", "") or "").strip().casefold()
+        if request.user.is_authenticated
+        else ""
+    )
+    today = timezone.localdate()
+    browse_results = []
+    open_pitches = []
+    for pitch in pitches:
+        pitch.dashboard_assignments = list(pitch.assignments.all())
+        pitch.dashboard_volunteer_requests = list(pitch.dashboard_volunteer_requests)
+        for volunteer_request in pitch.dashboard_volunteer_requests:
+            volunteer_request.dashboard_responses = list(volunteer_request.responses.all())
+        pitch.open_roles = []
+        pitch.all_open_roles = []
+        for need in pitch.role_needs.all():
+            need.available_slots = _available_role_slots(pitch, need)
+            if need.available_slots > 0:
+                pitch.all_open_roles.append(need)
+                if not normalized_position or need.role.strip().casefold() == normalized_position:
+                    pitch.open_roles.append(need)
+        pitch.is_open_for_member = (
+            pitch.status.strip().casefold() in ("open", "pending")
+            and pitch.target_date >= today
+            and bool(pitch.open_roles)
+        )
+        pitch.is_past_or_closed = (
+            pitch.status.strip().casefold() not in ("open", "pending")
+            or pitch.target_date < today
+        )
+        pitch.search_status = "Open" if pitch.is_open_for_member else "Closed"
+        if not pitch.is_past_or_closed and not pitch.all_open_roles:
+            pitch.closed_reason = "All role openings are filled"
+        elif not pitch.all_open_roles:
+            pitch.closed_reason = "No role openings available"
+        elif pitch.is_past_or_closed:
+            pitch.closed_reason = "Pitch is no longer accepting volunteers"
+        elif normalized_position and not pitch.open_roles:
+            pitch.closed_reason = "No openings for your position"
+        else:
+            pitch.closed_reason = ""
+
+        if request.user.is_authenticated:
+            pitch.requested_roles = {
+                response.role.strip().casefold()
+                for volunteer_request in pitch.dashboard_volunteer_requests
+                for response in volunteer_request.dashboard_responses
+                if response.volunteer_id == request.user.pk
+                and response.response_status.strip().casefold() not in ("rejected", "declined", "cancelled")
+            }
+        else:
+            pitch.requested_roles = set()
+
+        browse_results.append(pitch)
+        if pitch.is_open_for_member:
+            open_pitches.append(pitch)
+
+    if not search_query:
+        browse_results = []
+
+    role_opening_count = sum(
+        role_need.available_slots
+        for pitch in open_pitches
+        for role_need in pitch.open_roles
+    )
+    open_pitch_count = len(open_pitches)
+    return render(request, "home/pitches.html", {
+        "search_query": search_query,
+        "search_results": browse_results,
+        "open_pitches": open_pitches,
+        "open_pitch_count": open_pitch_count,
+        "role_opening_count": role_opening_count,
+        "member_position": getattr(request.user, "position", "") if request.user.is_authenticated else "",
+        "is_authenticated": request.user.is_authenticated,
+    })
 
 
 def _is_editor(user):
@@ -337,6 +550,23 @@ def home_view(request):
         # ------------------------------------
         # ACTION 2: Submit a New Pitch
         # ------------------------------------
+        valid_roles = dict(PITCH_ROLE_CHOICES)
+        selected_roles = set(request.POST.getlist("needed_roles"))
+        if not selected_roles or not selected_roles.issubset(valid_roles):
+            messages.error(request, "Choose at least one valid role needed for this pitch.")
+            return redirect("home:home")
+
+        role_slots = {}
+        try:
+            for role_key in selected_roles:
+                slots = int(request.POST.get(f"slots_{role_key}", "1"))
+                if slots < 1 or slots > 20:
+                    raise ValueError
+                role_slots[valid_roles[role_key]] = slots
+        except (TypeError, ValueError):
+            messages.error(request, "Role openings must be between 1 and 20 people.")
+            return redirect("home:home")
+
         pitch_title = request.POST.get("pitch_title")
         pitch_type = request.POST.get("pitch_type")
         location = request.POST.get("location", "").strip()
@@ -392,11 +622,16 @@ def home_view(request):
             status="open"
         )
 
-        VolunteerRequest.objects.create(
-            pitch=new_pitch,
-            requester=submitter or request.user,
-            status="open"
-        )
+        PitchRoleNeed.objects.bulk_create([
+            PitchRoleNeed(pitch=new_pitch, role=role, slots_needed=slots)
+            for role, slots in role_slots.items()
+        ])
+        if submitter:
+            VolunteerRequest.objects.create(
+                pitch=new_pitch,
+                requester=submitter,
+                status="open"
+            )
 
         messages.success(request, "Pitch submitted successfully!")
         return redirect("home:home")

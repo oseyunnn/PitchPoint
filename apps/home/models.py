@@ -168,12 +168,48 @@ class VolunteerResponse(models.Model):
         max_length=30,
         default="pending"
     )
+    role = models.CharField(
+        max_length=50,
+        blank=True,
+        default=""
+    )
     responded_at = models.DateTimeField(
         auto_now_add=True
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("volunteer_request", "volunteer", "role"),
+                name="unique_volunteer_role_response",
+            )
+        ]
+
     def __str__(self):
         return f"Response by {self.volunteer} for {self.volunteer_request.pitch.pitch_title}"
+
+
+class PitchRoleNeed(models.Model):
+    pitch = models.ForeignKey(
+        Pitch,
+        on_delete=models.CASCADE,
+        related_name="role_needs"
+    )
+    role = models.CharField(max_length=50)
+    slots_needed = models.PositiveSmallIntegerField(default=1)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("pitch", "role"),
+                name="unique_pitch_role_need",
+            )
+        ]
+        ordering = ("role",)
+
+    def __str__(self):
+        return f"{self.role} needed for {self.pitch.pitch_title}"
+
 
 class Assignment(models.Model):
     assignment_id = models.UUIDField(

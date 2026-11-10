@@ -1,0 +1,186 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <title>Pitches | PitchPoint</title>
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/home/pitches.css' %}?v=1">
+</head>
+<body class="dashboard-page pitches-page">
+    <header class="dashboard-header">
+        <div class="dashboard-brand-menu">
+            <a class="dashboard-brand" href="{% url 'home:home' %}" aria-label="PitchPoint dashboard">
+                <img src="{% static 'images/logo.png' %}" alt="">
+                <span>ITCH POINT.</span>
+            </a>
+            <nav class="dashboard-nav" aria-label="Dashboard navigation">
+                <a href="{% url 'home:home' %}">Dashboard</a>
+                <a class="is-current" href="{% url 'home:pitches' %}">Pitches</a>
+                <a href="{% url 'inbox:inbox' %}">Inbox</a>
+            </nav>
+        </div>
+        <a href="{% url 'login:logout' %}" class="dashboard-logout">Logout</a>
+    </header>
+
+    <main class="pitches-shell">
+        {% if messages %}
+            <div class="pitches-messages" aria-live="polite">
+                {% for message in messages %}<p class="pitches-message">{{ message }}</p>{% endfor %}
+            </div>
+        {% endif %}
+
+        <section class="pitches-hero" aria-labelledby="pitches-title">
+            <div class="pitches-hero-copy">
+                <p class="pitches-eyebrow">FIND YOUR NEXT CONTRIBUTION</p>
+                <h1 id="pitches-title">Pitch board</h1>
+                <p>Explore opportunities that fit your role, or search the full pitch archive.</p>
+            </div>
+            <div class="pitches-search-panel">
+                <form method="get" action="{% url 'home:pitches' %}" role="search">
+                    <label for="pitch-search">Search pitches</label>
+                    <div class="pitches-search-control">
+                        <input id="pitch-search" type="search" name="q" value="{{ search_query }}" placeholder="Try a title, type, or location" autocomplete="off">
+                        <button type="submit" aria-label="Search pitches">Search</button>
+                    </div>
+                </form>
+                {% if search_query %}<a class="clear-search" href="{% url 'home:pitches' %}">Clear search</a>{% endif %}
+            </div>
+        </section>
+
+        <section class="pitches-summary" aria-label="Pitch availability summary">
+            <div class="summary-card summary-card-dark">
+                <span>OPEN FOR YOU</span>
+                <strong>{{ open_pitch_count }}</strong>
+                <small>{% if member_position %}{{ member_position }} openings{% else %}pitches with available roles{% endif %}</small>
+            </div>
+            <div class="summary-card summary-card-light">
+                <span>AVAILABLE SPOTS</span>
+                <strong>{{ role_opening_count }}</strong>
+                <small>across your matching pitches</small>
+            </div>
+            <p class="position-note">
+                {% if member_position %}
+                    Showing opportunities for <strong>{{ member_position }}</strong>.
+                {% elif is_authenticated %}
+                    Add your position to your profile to see role-matched opportunities.
+                {% else %}
+                    Sign in to see openings matched to your position and volunteer.
+                {% endif %}
+            </p>
+        </section>
+
+        {% if search_query %}
+            <section class="pitches-section" aria-labelledby="search-results-title">
+                <div class="pitches-section-heading">
+                    <div>
+                        <p class="pitches-eyebrow">PITCH ARCHIVE</p>
+                        <h2 id="search-results-title">Search results</h2>
+                    </div>
+                    <span>{{ search_results|length }} result{{ search_results|length|pluralize }} for “{{ search_query }}”</span>
+                </div>
+                <div class="pitch-card-grid">
+                    {% for pitch in search_results %}
+                        <article class="pitch-listing-card">
+                            <div class="pitch-card-topline">
+                                <span class="pitch-status-pill{% if not pitch.is_open_for_member %} is-closed{% endif %}">{{ pitch.search_status }}</span>
+                                <span class="pitch-card-type">{{ pitch.pitch_type }}</span>
+                            </div>
+                            <h3>{{ pitch.pitch_title }}</h3>
+                            <p class="pitch-card-meta">{{ pitch.target_date|date:"M j, Y" }} · {{ pitch.target_time|time:"g:i A" }}{% if pitch.location %} · {{ pitch.location }}{% endif %}</p>
+                            {% if pitch.additional_details %}<p class="pitch-card-details">{{ pitch.additional_details|truncatechars:180 }}</p>{% endif %}
+                            <div class="pitch-role-list" aria-label="Role availability">
+                                {% for role_need in pitch.all_open_roles %}
+                                    <span class="role-chip{% if role_need.role|lower != member_position|lower and member_position %} role-chip-muted{% endif %}">
+                                        {{ role_need.role }} · {{ role_need.available_slots }} left
+                                    </span>
+                                {% empty %}
+                                    <span class="role-chip role-chip-muted">{{ pitch.closed_reason }}</span>
+                                {% endfor %}
+                            </div>
+                            {% if pitch.is_open_for_member %}
+                                {% for role_need in pitch.open_roles %}
+                                    {% if is_authenticated %}
+                                        {% if role_need.role|lower in pitch.requested_roles %}
+                                            <span class="request-sent">Request sent for {{ role_need.role }}</span>
+                                        {% else %}
+                                            <form method="post" action="{% url 'home:pitches' %}" class="pitch-volunteer-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="pitch_id" value="{{ pitch.pitch_id }}">
+                                                <input type="hidden" name="role" value="{{ role_need.role }}">
+                                                <button type="submit" class="pitch-volunteer-button">Volunteer as {{ role_need.role }}</button>
+                                            </form>
+                                        {% endif %}
+                                    {% else %}
+                                        <a class="pitch-volunteer-button" href="{% url 'login:login' %}">Sign in to volunteer</a>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <p class="pitch-closed-note">{{ pitch.closed_reason }}</p>
+                            {% endif %}
+                        </article>
+                    {% empty %}
+                        <div class="pitches-empty">
+                            <span aria-hidden="true">⌕</span>
+                            <h3>No matching pitches</h3>
+                            <p>Try a different title, type, or location.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% else %}
+            <section class="pitches-section" aria-labelledby="open-pitches-title">
+                <div class="pitches-section-heading">
+                    <div>
+                        <p class="pitches-eyebrow">MATCHED TO YOUR POSITION</p>
+                        <h2 id="open-pitches-title">Open pitches</h2>
+                    </div>
+                    <span>{{ open_pitch_count }} available</span>
+                </div>
+                <div class="pitch-card-grid">
+                    {% for pitch in open_pitches %}
+                        <article class="pitch-listing-card">
+                            <div class="pitch-card-topline">
+                                <span class="pitch-status-pill">Open</span>
+                                <span class="pitch-card-type">{{ pitch.pitch_type }}</span>
+                            </div>
+                            <h3>{{ pitch.pitch_title }}</h3>
+                            <p class="pitch-card-meta">{{ pitch.target_date|date:"M j, Y" }} · {{ pitch.target_time|time:"g:i A" }}{% if pitch.location %} · {{ pitch.location }}{% endif %}</p>
+                            {% if pitch.additional_details %}<p class="pitch-card-details">{{ pitch.additional_details|truncatechars:180 }}</p>{% endif %}
+                            <div class="pitch-role-list" aria-label="Matching openings">
+                                {% for role_need in pitch.open_roles %}
+                                    <span class="role-chip">{{ role_need.role }} · {{ role_need.available_slots }} spot{{ role_need.available_slots|pluralize }}</span>
+                                {% endfor %}
+                            </div>
+                            {% for role_need in pitch.open_roles %}
+                                {% if is_authenticated %}
+                                    {% if role_need.role|lower in pitch.requested_roles %}
+                                        <span class="request-sent">Request sent for {{ role_need.role }}</span>
+                                    {% else %}
+                                        <form method="post" action="{% url 'home:pitches' %}" class="pitch-volunteer-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="pitch_id" value="{{ pitch.pitch_id }}">
+                                            <input type="hidden" name="role" value="{{ role_need.role }}">
+                                            <button type="submit" class="pitch-volunteer-button">Volunteer as {{ role_need.role }}</button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <a class="pitch-volunteer-button" href="{% url 'login:login' %}">Sign in to volunteer</a>
+                                {% endif %}
+                            {% endfor %}
+                        </article>
+                    {% empty %}
+                        <div class="pitches-empty">
+                            <span aria-hidden="true">✦</span>
+                            <h3>No openings for your position yet</h3>
+                            <p>Search all pitches to explore the archive, including closed opportunities.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+    </main>
+</body>
+</html>

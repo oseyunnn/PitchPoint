@@ -83,6 +83,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    document.querySelectorAll("[data-role-toggle]").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+            const slotsInput = checkbox.closest(".role-need-option")?.querySelector('input[type="number"]');
+            if (slotsInput) slotsInput.disabled = !checkbox.checked;
+        });
+    });
+
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && activeModal) closeModal(activeModal);
     });

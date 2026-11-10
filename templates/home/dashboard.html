@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
     <title>Dashboard | PitchPoint</title>
-    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=3">
 </head>
 <body class="dashboard-page">
     <header class="dashboard-header">
@@ -17,7 +17,7 @@
             </a>
             <nav class="dashboard-nav" aria-label="Dashboard navigation">
                 <a class="is-current" href="{% url 'home:home' %}">Dashboard</a>
-                <a href="#deliverables">Pitches</a>
+                <a href="{% url 'home:pitches' %}">Pitches</a>
                 <a href="{% url 'inbox:inbox' %}">Inbox{% if unread_count %}<span class="nav-count">{{ unread_count }}</span>{% endif %}</a>
             </nav>
         </div>
@@ -293,6 +293,18 @@
                         <label>Time<input type="time" name="target_time" required></label>
                     </div>
                     <label>Additional details<textarea name="additional_details" rows="3"></textarea></label>
+                    <fieldset class="pitch-role-needs">
+                        <legend>Roles needed</legend>
+                        <p>Select the positions to recruit and the number of people needed for each.</p>
+                        <div class="role-need-grid">
+                            {% for role in pitch_role_choices %}
+                                <label class="role-need-option">
+                                    <span><input type="checkbox" name="needed_roles" value="{{ role.key }}" data-role-toggle="{{ role.key }}"> {{ role.label }}</span>
+                                    <input type="number" name="slots_{{ role.key }}" min="1" max="20" value="1" aria-label="Number of {{ role.label }} needed" disabled>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </fieldset>
                     <label>Pitch letter (PDF)<input type="file" name="pdf_file" accept=".pdf,application/pdf"></label>
                     <button type="submit" class="volunteer-button">Submit pitch</button>
                 </form>
@@ -300,6 +312,6 @@
         </div>
     {% endif %}
 
-    <script src="{% static 'js/home/dashboard.js' %}?v=2" defer></script>
+    <script src="{% static 'js/home/dashboard.js' %}?v=3" defer></script>
 </body>
 </html>
