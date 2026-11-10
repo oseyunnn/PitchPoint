@@ -202,6 +202,39 @@ class Assignment(models.Model):
         return f"{self.assigned_user} as {self.assigned_role} for {self.pitch.pitch_title}"
 
 
+class WorkSubmission(models.Model):
+    submission_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    pitch = models.ForeignKey(
+        Pitch,
+        on_delete=models.CASCADE,
+        related_name="work_submissions"
+    )
+    submitter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="work_submissions"
+    )
+    submission_url = models.URLField(max_length=2048)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("pitch", "submitter"),
+                name="unique_work_submission_per_member_pitch",
+            )
+        ]
+        ordering = ("-updated_at",)
+
+    def __str__(self):
+        return f"Work submission for {self.pitch.pitch_title} by {self.submitter}"
+
+
 class Comment(models.Model):
     comment_id = models.UUIDField(
         primary_key=True,
@@ -212,6 +245,20 @@ class Comment(models.Model):
         Pitch,
         on_delete=models.CASCADE,
         related_name="comments"
+    )
+    submission = models.ForeignKey(
+        WorkSubmission,
+        on_delete=models.CASCADE,
+        related_name="comments",
+        null=True,
+        blank=True,
+    )
+    parent_comment = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="replies",
+        null=True,
+        blank=True,
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,

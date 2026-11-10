@@ -6,10 +6,15 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("closeNewPitchModal"),
     ];
     let activeModal = null;
+    let returnFocus = null;
+    let previousBodyOverflow = "";
 
-    function openModal(modal) {
+    function openModal(modal, trigger) {
         if (!modal) return;
         activeModal = modal;
+        returnFocus = trigger;
+        previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
         modal.classList.add("is-open");
         modal.setAttribute("aria-hidden", "false");
         modal.querySelector(".modal-close")?.focus();
@@ -19,10 +24,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!modal) return;
         modal.classList.remove("is-open");
         modal.setAttribute("aria-hidden", "true");
-        activeModal = null;
+        if (activeModal === modal) {
+            activeModal = null;
+            document.body.style.overflow = previousBodyOverflow;
+            returnFocus?.focus();
+            returnFocus = null;
+        }
     }
 
-    document.getElementById("openPitchModal")?.addEventListener("click", () => openModal(newPitchModal));
+    document.getElementById("openPitchModal")?.addEventListener("click", (event) => openModal(newPitchModal, event.currentTarget));
     document.getElementById("closePitchModal")?.addEventListener("click", () => closeModal(detailModal));
     document.getElementById("closeNewPitchModal")?.addEventListener("click", () => closeModal(newPitchModal));
 
@@ -53,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 pdfLink.hidden = true;
             }
-            openModal(detailModal);
+            openModal(detailModal, button);
         });
     });
 
@@ -64,6 +74,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".pitch-modal").forEach((modal) => {
         modal.addEventListener("click", (event) => {
             if (event.target === modal) closeModal(modal);
+        });
+    });
+
+    document.querySelectorAll(".work-submission-details").forEach((details) => {
+        details.addEventListener("toggle", () => {
+            details.closest(".deliverable-card")?.classList.toggle("has-open-submission", details.open);
         });
     });
 

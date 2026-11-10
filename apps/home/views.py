@@ -3,11 +3,12 @@ import urllib.request
 import urllib.error
 import json
 from datetime import timedelta
-from django.db.models import Q
-from django.shortcuts import render, redirect
+from django.db.models import Prefetch, Q
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
+from .forms import SubmissionCommentForm, WorkSubmissionForm
 from .models import (
     Assignment,
     Comment,
@@ -15,6 +16,7 @@ from .models import (
     Pitch,
     PitchEndorsement,
     PitchReview,
+    WorkSubmission,
     VolunteerRequest,
     VolunteerResponse,
 )
@@ -29,9 +31,22 @@ def _dashboard_context(user):
     future_pitches = Pitch.objects.filter(target_date__gte=today)
     open_pitches = future_pitches.filter(status__in=("open", "pending"))
     pitches = (open_pitches if open_pitches.exists() else future_pitches)
-    pitches = pitches.order_by("target_date", "target_time")[:12]
+    is_admin = user.is_authenticated and (
+        getattr(user, "is_superuser", False)
+        or getattr(user, "role", "").casefold() == "admin"
+    )
+    is_editor = user.is_authenticated and (
+        is_admin or (getattr(user, "position", "") or "").strip().casefold() == "editor"
+    )
+    if user.is_authenticated:
+        pitches = pitches | Pitch.objects.filter(assignments__assigned_user=user)
+        if is_editor:
+            pitches = pitches | Pitch.objects.filter(work_submissions__isnull=False)
+
+    pitches = pitches.distinct().order_by("target_date", "target_time")[:12]
     context = {
         "pitches": pitches,
+        "previous_submissions": [],
         "today_tasks": [],
         "unread_notifications": [],
         "unread_count": 0,
@@ -42,13 +57,74 @@ def _dashboard_context(user):
         "ongoing_count": 0,
         "chart_points": [],
         "chart_polyline": "",
+        "chart_area": "",
         "chart_max": 1,
+        "chart_activity_total": 0,
+        "chart_active_weeks": 0,
+        "chart_peak_week": "No activity yet",
         "is_authenticated": user.is_authenticated,
+        "is_editor": is_editor,
     }
 
     chart_start = today - timedelta(days=41)
     activity_counts = [0] * 6
     if user.is_authenticated:
+        review_comments = Comment.objects.select_related("author").order_by("created_at")
+        submission_queryset = WorkSubmission.objects.select_related(
+            "submitter"
+        ).prefetch_related(
+            Prefetch("comments", queryset=review_comments, to_attr="dashboard_comments")
+        )
+        if not is_editor:
+            submission_queryset = submission_queryset.filter(submitter=user)
+        assignment_queryset = Assignment.objects.filter(assigned_user=user)
+        pitches = list(pitches.prefetch_related(
+            Prefetch(
+                "assignments",
+                queryset=assignment_queryset,
+                to_attr="current_user_assignments",
+            ),
+            Prefetch(
+                "work_submissions",
+                queryset=submission_queryset,
+                to_attr="dashboard_submissions",
+            ),
+        ))
+        for pitch in pitches:
+            assignments = pitch.current_user_assignments
+            pitch.can_submit_work = any(
+                (assignment.assigned_role or "").strip().casefold() != "editor"
+                for assignment in assignments
+            )
+            pitch.can_review_work = is_editor
+            pitch.current_user_submission = next(
+                (
+                    submission
+                    for submission in pitch.dashboard_submissions
+                    if submission.submitter_id == user.pk
+                ),
+                None,
+            )
+            for submission in pitch.dashboard_submissions:
+                submission.is_owned_by_user = submission.submitter_id == user.pk
+                comments = submission.dashboard_comments
+                replies_by_parent = {}
+                for comment in comments:
+                    if comment.parent_comment_id:
+                        replies_by_parent.setdefault(comment.parent_comment_id, []).append(comment)
+                submission.dashboard_comment_threads = []
+                for comment in comments:
+                    if comment.parent_comment_id is None:
+                        comment.dashboard_replies = replies_by_parent.get(comment.pk, [])
+                        comment.can_reply = (
+                            submission.is_owned_by_user and _is_editor(comment.author)
+                        )
+                        submission.dashboard_comment_threads.append(comment)
+
+        context["pitches"] = pitches
+        context["previous_submissions"] = WorkSubmission.objects.filter(
+            submitter=user
+        ).select_related("pitch").order_by("-updated_at")
         context["submitted_count"] = Pitch.objects.filter(submitter=user).count()
         user_assignments = Assignment.objects.filter(assigned_user=user)
         context["assigned_count"] = user_assignments.count()
@@ -80,6 +156,7 @@ def _dashboard_context(user):
             PitchReview.objects.filter(reviewer=user, reviewed_at__gte=chart_since).values_list("reviewed_at", flat=True),
             PitchEndorsement.objects.filter(endorser=user, endorsed_at__gte=chart_since).values_list("endorsed_at", flat=True),
             VolunteerResponse.objects.filter(volunteer=user, responded_at__gte=chart_since).values_list("responded_at", flat=True),
+            WorkSubmission.objects.filter(submitter=user, updated_at__gte=chart_since).values_list("updated_at", flat=True),
         )
         for activity_source in activity_sources:
             for created_at in activity_source:
@@ -102,12 +179,120 @@ def _dashboard_context(user):
     context["chart_polyline"] = " ".join(
         f"{point['x']},{point['y']}" for point in chart_points
     )
+    chart_line = " ".join(
+        "{},{}".format(point["x"], point["y"]) for point in chart_points
+    )
+    context["chart_area"] = f"18,104 {chart_line} 283,104"
     context["chart_max"] = chart_max
+    context["chart_activity_total"] = sum(activity_counts)
+    context["chart_active_weeks"] = sum(count > 0 for count in activity_counts)
+    if any(activity_counts):
+        peak_index = activity_counts.index(max(activity_counts))
+        context["chart_peak_week"] = chart_points[peak_index]["label"]
     return context
+
+
+def _is_editor(user):
+    return user.is_authenticated and (
+        getattr(user, "is_superuser", False)
+        or getattr(user, "role", "").casefold() == "admin"
+        or (getattr(user, "position", "") or "").strip().casefold() == "editor"
+    )
+
+
+def _can_review_submission(user, submission):
+    return _is_editor(user)
+
+
+def _handle_submission_action(request, action_type):
+    if not request.user.is_authenticated:
+        messages.error(request, "Please sign in to manage work submissions.")
+        return redirect("login:login")
+
+    submission_id = request.POST.get("submission_id")
+    if action_type in ("editor_comment", "reply_submission_comment"):
+        submission = get_object_or_404(
+            WorkSubmission.objects.select_related("pitch", "submitter"),
+            submission_id=submission_id,
+        )
+        comment_form = SubmissionCommentForm(request.POST)
+        if not comment_form.is_valid():
+            messages.error(request, "Enter a comment before submitting.")
+            return redirect("home:home")
+
+        if action_type == "editor_comment":
+            if not _can_review_submission(request.user, submission):
+                messages.error(request, "You are not assigned to review this work.")
+                return redirect("home:home")
+            comment = Comment.objects.create(
+                pitch=submission.pitch,
+                submission=submission,
+                author=request.user,
+                content=comment_form.cleaned_data["content"],
+            )
+            if submission.submitter_id != request.user.pk:
+                Notification.objects.create(
+                    recipient=submission.submitter,
+                    pitch=submission.pitch,
+                    message=f"An editor commented on your work for {submission.pitch.pitch_title}.",
+                )
+            messages.success(request, "Your feedback has been sent.")
+            return redirect("home:home")
+
+        parent_comment = get_object_or_404(
+            Comment.objects.select_related("author"),
+            comment_id=request.POST.get("parent_comment_id"),
+            submission=submission,
+            parent_comment__isnull=True,
+        )
+        if submission.submitter_id != request.user.pk or not _is_editor(parent_comment.author):
+            messages.error(request, "You can only reply to editor feedback on your own work.")
+            return redirect("home:home")
+        Comment.objects.create(
+            pitch=submission.pitch,
+            submission=submission,
+            parent_comment=parent_comment,
+            author=request.user,
+            content=comment_form.cleaned_data["content"],
+        )
+        if parent_comment.author_id != request.user.pk:
+            Notification.objects.create(
+                recipient=parent_comment.author,
+                pitch=submission.pitch,
+                message=f"{request.user.name} replied to your feedback on {submission.pitch.pitch_title}.",
+            )
+        messages.success(request, "Your reply has been sent.")
+        return redirect("home:home")
+
+    pitch = get_object_or_404(Pitch, pitch_id=request.POST.get("pitch_id"))
+    if not Assignment.objects.filter(pitch=pitch, assigned_user=request.user).exists():
+        messages.error(request, "Only members assigned to this pitch can submit work.")
+        return redirect("home:home")
+
+    form = WorkSubmissionForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Enter a valid http or https link to your work.")
+        return redirect("home:home")
+
+    submission, created = WorkSubmission.objects.get_or_create(
+        pitch=pitch,
+        submitter=request.user,
+        defaults={"submission_url": form.cleaned_data["submission_url"]},
+    )
+    if not created:
+        submission.submission_url = form.cleaned_data["submission_url"]
+        submission.save(update_fields=("submission_url", "updated_at"))
+    messages.success(
+        request,
+        "Work submitted successfully." if created else "Your work link has been updated.",
+    )
+    return redirect("home:home")
 
 def home_view(request):
     if request.method == "POST":
         action_type = request.POST.get("action_type")
+        if action_type in ("submit_work", "editor_comment", "reply_submission_comment"):
+            return _handle_submission_action(request, action_type)
 
         # ------------------------------------
         # ACTION 1: Volunteer for a Pitch
