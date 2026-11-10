@@ -13,20 +13,57 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_env_file():
+    env_file = BASE_DIR / ".env"
+    if not env_file.is_file():
+        return
+
+    for line_number, line in enumerate(env_file.read_text(encoding="utf-8").splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        name, separator, value = line.partition("=")
+        name = name.strip()
+        if not separator or not name:
+            raise ImproperlyConfigured(f"Invalid .env entry on line {line_number}.")
+
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+        os.environ.setdefault(name, value)
+
+
+def _required_env(name):
+    value = os.environ.get(name)
+    if not value:
+        raise ImproperlyConfigured(f"Set {name} in the environment or .env file.")
+    return value
+
+
+_load_env_file()
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$7jx#kcqkc)!y632yu-74*@u4u#=27tnw&2-^(8gjrbitox1ya'
+SECRET_KEY = _required_env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes", "on")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
 
 
 # Application definition
@@ -86,11 +123,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.ryjwkybievjhkmjapwpj',  
-        'PASSWORD': 'bARI4aNGELAjAHZIEL',
-        'HOST': 'aws-0-ap-northeast-1.pooler.supabase.com',  
-       'PORT': '5432', 
+        'NAME': _required_env("DB_NAME"),
+        'USER': _required_env("DB_USER"),
+        'PASSWORD': _required_env("DB_PASSWORD"),
+        'HOST': _required_env("DB_HOST"),
+        'PORT': _required_env("DB_PORT"),
     }
 
  
@@ -156,8 +193,8 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
-SUPABASE_URL = "https://ryjwkybievjhkmjapwpj.supabase.co"
+SUPABASE_URL = _required_env("SUPABASE_URL")
 
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5andreWJpZXZqaGttamFwd3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NDQzOTYsImV4cCI6MjEwMzIyMDM5Nn0.q2cLq4Ew_v71qwQr5k9ap92qEGdWubhL4rn3CS0wU6w" 
+SUPABASE_KEY = _required_env("SUPABASE_KEY")
 
-SUPABASE_BUCKET = "pitch-letters"
+SUPABASE_BUCKET = _required_env("SUPABASE_BUCKET")
