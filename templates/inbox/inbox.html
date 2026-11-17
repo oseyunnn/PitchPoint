@@ -17,7 +17,7 @@
         </a>
         <nav class="dashboard-nav" aria-label="Dashboard navigation">
             <a href="{% url 'home:home' %}">Dashboard</a>
-            <a href="{% url 'home:home' %}#deliverables">Pitches</a>
+            <a href="{% url 'home:pitches' %}">Pitches</a>
             <a class="is-current" href="{% url 'inbox:inbox' %}">Inbox{% if unread_count %}<span class="nav-count">{{ unread_count }}</span>{% endif %}</a>
         </nav>
         <a href="{% url 'login:logout' %}" class="dashboard-logout">Logout</a>
