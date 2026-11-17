@@ -5,46 +5,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
-    <title>Dashboard | PitchPoint</title>
-    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=3">
+    <title>Dashboard | PitchPoint — TTSP Editorial</title>
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=4">
 </head>
 <body class="dashboard-page">
-    <header class="dashboard-header">
-        <div class="dashboard-brand-menu">
-            <a class="dashboard-brand" href="{% url 'home:home' %}" aria-label="PitchPoint dashboard">
-                <img src="{% static 'images/logo.png' %}" alt="">
-                <span>ITCH POINT.</span>
-            </a>
-            <nav class="dashboard-nav" aria-label="Dashboard navigation">
-                <a class="is-current" href="{% url 'home:home' %}">Dashboard</a>
-                <a href="{% url 'home:pitches' %}">Pitches</a>
-                <a href="{% url 'inbox:inbox' %}">Inbox{% if unread_count %}<span class="nav-count">{{ unread_count }}</span>{% endif %}</a>
-            </nav>
-        </div>
-        <a href="{% url 'login:logout' %}" class="dashboard-logout">Logout</a>
-    </header>
+    {% include 'partials/dashboard_nav.html' with active_page='dashboard' %}
 
     <main class="dashboard-shell">
         <div class="dashboard-main">
             {% if messages %}
                 <div class="dashboard-messages" aria-live="polite">
-                    {% for message in messages %}<p class="dashboard-message">{{ message }}</p>{% endfor %}
+                    {% for message in messages %}
+                        <div class="dashboard-message {% if message.tags %}is-{{ message.tags }}{% endif %}">
+                            <span class="msg-icon">{% if message.tags == 'error' %}⚠️{% elif message.tags == 'success' %}✓{% else %}ℹ{% endif %}</span>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
                 </div>
             {% endif %}
 
+            <!-- Welcome & Quick Action Banner -->
+            <section class="welcome-hero-banner">
+                <div class="welcome-hero-content">
+                    <span class="welcome-eyebrow">THE TECHNOPHORE STUDENT PUBLICATION</span>
+                    <h1 class="welcome-title">
+                        {% if user.is_authenticated %}
+                            Welcome back, {{ user.name }}!
+                        {% else %}
+                            Welcome to PitchPoint
+                        {% endif %}
+                    </h1>
+                    <p class="welcome-subtitle">
+                        {% if user.is_authenticated %}
+                            {{ user.position|default:"Staff Member" }} Desk · Coordinate pitches, volunteer for coverage, and submit deliverables.
+                        {% else %}
+                            Browse student publication pitches, events, and coverage opportunities.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="welcome-hero-actions">
+                    {% if user.is_authenticated %}
+                        <button type="button" class="btn-hero-primary" id="openPitchModal">
+                            <span>+ Submit a Pitch</span>
+                        </button>
+                    {% else %}
+                        <a href="{% url 'login:login' %}" class="btn-hero-primary">Sign in to pitch</a>
+                    {% endif %}
+                    <a href="{% url 'home:pitches' %}" class="btn-hero-secondary">
+                        <span>Browse Pitches</span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Metrics & Contribution Grid -->
             <section class="overview-grid" aria-label="Progress and inbox summary">
                 <div class="progress-column">
-                    <h1 class="section-heading">My progress chart</h1>
+                    <div class="section-title-row">
+                        <h2 class="section-heading">My Contribution & Activity</h2>
+                        <span class="sub-indicator">Last 6 Weeks</span>
+                    </div>
                     <div class="progress-card">
                         <div class="chart-wrap">
-                            <svg class="contribution-chart" viewBox="0 0 300 130" role="img" aria-label="Your contributions over the last six weeks">
+                            <svg class="contribution-chart" viewBox="0 0 300 130" role="img" aria-label="Contributions over the last six weeks">
                                 <line x1="14" y1="104" x2="286" y2="104" class="chart-axis"></line>
                                 <line x1="14" y1="65" x2="286" y2="65" class="chart-gridline"></line>
                                 <line x1="14" y1="26" x2="286" y2="26" class="chart-gridline"></line>
                                 <polygon points="{{ chart_area }}" class="chart-area"></polygon>
                                 <polyline points="{{ chart_polyline }}" class="chart-line"></polyline>
                                 {% for point in chart_points %}
-                                    <circle cx="{{ point.x }}" cy="{{ point.y }}" r="3" class="chart-dot">
+                                    <circle cx="{{ point.x }}" cy="{{ point.y }}" r="3.5" class="chart-dot">
                                         <title>{{ point.count }} contributions starting {{ point.label }}</title>
                                     </circle>
                                     <text x="{{ point.x }}" y="{{ point.y|add:'-8' }}" class="chart-value">{{ point.count }}</text>
@@ -54,264 +84,628 @@
                                 {% for point in chart_points %}<span>{{ point.label }}</span>{% endfor %}
                             </div>
                             <div class="chart-summary" aria-label="Six week activity summary">
-                                <div><strong>{{ chart_activity_total }}</strong><span>Activities</span></div>
-                                <div><strong>{{ chart_active_weeks }}<small>/6</small></strong><span>Active weeks</span></div>
-                                <div><strong>{{ chart_peak_week }}</strong><span>Most active</span></div>
+                                <div class="chart-summary-item">
+                                    <strong>{{ chart_activity_total }}</strong>
+                                    <span>Total Activities</span>
+                                </div>
+                                <div class="chart-summary-item">
+                                    <strong>{{ chart_active_weeks }}<small>/6</small></strong>
+                                    <span>Active Weeks</span>
+                                </div>
+                                <div class="chart-summary-item">
+                                    <strong>{{ chart_peak_week }}</strong>
+                                    <span>Most Active</span>
+                                </div>
                             </div>
                         </div>
+
                         <div class="today-tasks">
-                            <h2>Upcoming tasks</h2>
-                            {% for pitch in today_tasks %}
-                                <p><span>{{ pitch.pitch_title }}</span><time datetime="{{ pitch.target_date|date:'Y-m-d' }}T{{ pitch.target_time|time:'H:i' }}">{{ pitch.target_date|date:"M j" }} · {{ pitch.target_time|time:"g:i A" }}</time></p>
-                            {% empty %}
-                                <p class="task-empty">No upcoming tasks assigned.</p>
-                            {% endfor %}
-                            {% if not is_authenticated %}<a href="{% url 'login:login' %}" class="sign-in-nudge">Sign in to track your work</a>{% endif %}
+                            <div class="tasks-header">
+                                <h3>Upcoming Tasks</h3>
+                                <span class="tasks-count">{{ today_tasks|length }}</span>
+                            </div>
+                            <div class="tasks-list">
+                                {% for pitch in today_tasks %}
+                                    <div class="task-item">
+                                        <div class="task-info">
+                                            <span class="task-type-badge">{{ pitch.pitch_type|upper }}</span>
+                                            <strong class="task-title">{{ pitch.pitch_title }}</strong>
+                                            <time datetime="{{ pitch.target_date|date:'Y-m-d' }}T{{ pitch.target_time|time:'H:i' }}" class="task-time">
+                                                📅 {{ pitch.target_date|date:"M j" }} · {{ pitch.target_time|time:"g:i A" }}
+                                            </time>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <p class="task-empty">No upcoming deadlines assigned.</p>
+                                {% endfor %}
+                            </div>
+                            {% if not is_authenticated %}
+                                <a href="{% url 'login:login' %}" class="sign-in-nudge">Sign in to track your editorial tasks</a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <a class="missed-card" href="{% url 'inbox:inbox' %}">
-                    <div class="missed-heading-row">
-                        <h2>Missed chats</h2>
-                        <span class="missed-count">{{ unread_count }}</span>
-                    </div>
-                    {% for notification in unread_notifications %}
-                        <div class="missed-notification">
-                            <span class="missed-avatar">{{ notification.message|slice:":1"|upper }}</span>
-                            <span class="missed-message">{{ notification.message|truncatechars:56 }}</span>
+                <!-- Inbox Quick Widget -->
+                <div class="missed-card-wrapper">
+                    <div class="missed-card">
+                        <div class="missed-heading-row">
+                            <div class="missed-title-area">
+                                <h2>Recent Updates</h2>
+                                <span class="missed-sub">Inbox notifications</span>
+                            </div>
+                            <span class="missed-count {% if unread_count > 0 %}has-unread{% endif %}">{{ unread_count }} unread</span>
                         </div>
-                    {% empty %}
-                        <p class="missed-empty">You are all caught up.</p>
-                    {% endfor %}
-                    {% if other_unread_count %}<p class="missed-others">AND {{ other_unread_count }} OTHERS</p>{% endif %}
-                    <span class="missed-open">Open inbox</span>
-                </a>
+                        <div class="missed-list">
+                            {% for notification in unread_notifications %}
+                                <div class="missed-notification">
+                                    <span class="missed-avatar">{{ notification.message|slice:":1"|upper }}</span>
+                                    <div class="missed-copy">
+                                        <span class="missed-message">{{ notification.message|truncatechars:65 }}</span>
+                                        <span class="missed-time">{{ notification.created_at|date:"M j · g:i A" }}</span>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="missed-empty-state">
+                                    <span class="check-icon">✓</span>
+                                    <p class="missed-empty">You're all caught up!</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if other_unread_count %}
+                            <p class="missed-others">+ {{ other_unread_count }} more unread updates</p>
+                        {% endif %}
+                        <div class="missed-actions">
+                            <a class="missed-open-btn" href="{% url 'inbox:inbox' %}">Open Full Inbox →</a>
+                        </div>
+                    </div>
+                </div>
             </section>
 
+            <!-- Deliverables & Pitches Workspace -->
             <section class="deliverables-section" id="deliverables">
-                <div class="deliverables-heading">
-                    <h2 class="section-heading">Upcoming deliverables</h2>
-                    {% if user.is_authenticated %}<span>{{ pitches|length }} upcoming pitches</span>{% endif %}
+                <div class="deliverables-heading-bar">
+                    <div class="deliverables-title-group">
+                        <h2 class="section-heading">Editorial Deliverables & Pitches</h2>
+                        <span class="deliverables-counter">{{ pitches|length }} active items</span>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="workspace-filter-tabs" role="tablist">
+                        <button type="button" class="tab-btn is-active" data-filter="all">All Pitches ({{ pitches|length }})</button>
+                        {% if user.is_authenticated %}
+                            <button type="button" class="tab-btn" data-filter="assigned">Assigned to Me ({{ my_assigned_pitches|length }})</button>
+                            <button type="button" class="tab-btn" data-filter="created">
+                                Created by Me ({{ my_created_pitches|length }})
+                                {% if pending_volunteers_count > 0 %}
+                                    <span class="tab-badge-alert">{{ pending_volunteers_count }}</span>
+                                {% endif %}
+                            </button>
+                            {% if is_editor %}
+                                <button type="button" class="tab-btn" data-filter="review">Needs Review ({{ review_needed_pitches|length }})</button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
+
                 <div class="deliverables-grid">
                     {% for pitch in pitches %}
-                        <article class="deliverable-card">
-                            <div class="deliverable-copy">
-                                <p class="deliverable-type">{{ pitch.pitch_type|default:"PITCH"|upper }}</p>
-                                <h3>{{ pitch.pitch_title|upper }}</h3>
-                                <p class="deliverable-meta">{{ pitch.target_date|date:"F j, Y" }} · {{ pitch.target_time|time:"g:i A" }}</p>
-                                <p class="deliverable-location">{{ pitch.location|default:"Location to be announced" }}</p>
+                        <article class="deliverable-card 
+                            {% if pitch.user_is_assigned %}is-assigned-to-user{% endif %}
+                            {% if pitch.is_owner %}is-created-by-user{% endif %}
+                            {% if pitch.dashboard_submissions %}has-submissions{% endif %}"
+                            data-category="all {% if pitch.user_is_assigned %}assigned{% endif %} {% if pitch.is_owner %}created{% endif %} {% if pitch.dashboard_submissions and pitch.can_review_work %}review{% endif %}">
+                            
+                            <!-- Topline Badges -->
+                            <div class="deliverable-topline">
+                                <div class="badge-group">
+                                    <span class="deliverable-type-badge">{{ pitch.pitch_type|default:"Event Coverage"|upper }}</span>
+                                    <span class="status-pill status-{{ pitch.status|lower }}">{{ pitch.status|title }}</span>
+                                </div>
+                                <div class="user-rel-badges">
+                                    {% if pitch.is_owner %}
+                                        <span class="owner-badge" title="You submitted this pitch">Pitch Owner</span>
+                                    {% endif %}
+                                    {% if pitch.user_is_assigned %}
+                                        <span class="assigned-badge" title="You are assigned as contributor">Assigned: {{ pitch.current_user_assignment.assigned_role }}</span>
+                                    {% elif pitch.user_has_volunteered %}
+                                        <span class="pending-vol-badge" title="Application pending review">Applied ({{ pitch.user_volunteer_response.role|default:"Volunteer" }})</span>
+                                    {% endif %}
+                                </div>
                             </div>
+
+                            <!-- Title & Info -->
+                            <div class="deliverable-copy">
+                                <h3 class="deliverable-title">{{ pitch.pitch_title }}</h3>
+                                
+                                <div class="deliverable-meta-row">
+                                    <span class="meta-item">
+                                        <svg class="meta-icon" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                                        </svg>
+                                        {{ pitch.target_date|date:"F j, Y" }} · {{ pitch.target_time|time:"g:i A" }}
+                                    </span>
+                                    <span class="meta-item">
+                                        <svg class="meta-icon" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        {{ pitch.location|default:"CIT-U Campus / Online" }}
+                                    </span>
+                                </div>
+
+                                {% if pitch.additional_details %}
+                                    <p class="deliverable-snippet">{{ pitch.additional_details|truncatechars:140 }}</p>
+                                {% endif %}
+
+                                <!-- Role Openings & Assignees Preview -->
+                                <div class="role-slots-summary">
+                                    {% if pitch.open_roles_list %}
+                                        <span class="slots-label">Needs:</span>
+                                        <div class="slots-chips">
+                                            {% for role_need in pitch.open_roles_list %}
+                                                <span class="slot-chip" title="{{ role_need.available_slots }} slots available">
+                                                    {{ role_need.role }} ({{ role_need.available_slots }} open)
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% elif pitch.role_needs.all %}
+                                        <span class="slots-filled">All requested role openings filled</span>
+                                    {% else %}
+                                        <span class="slots-open-call">Open for general staff volunteers</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Submitter & Assigned members indicator -->
+                                <div class="people-summary-row">
+                                    <span class="submitter-tag">Pitched by: <strong>{{ pitch.submitter.name|default:"Editorial Team" }}</strong></span>
+                                    {% if pitch.assigned_members %}
+                                        <span class="assignees-count">Staff assigned: {{ pitch.assigned_members|length }}</span>
+                                    {% endif %}
+                                    {% if pitch.is_owner and pitch.pending_volunteers %}
+                                        <span class="pending-applicants-alert">⚡ {{ pitch.pending_volunteers|length }} volunteer applicant{{ pitch.pending_volunteers|length|pluralize }} waiting!</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Actions Bar -->
                             <div class="deliverable-actions">
-                                <button type="button" class="view-details-btn" data-title="{{ pitch.pitch_title }}" data-type="{{ pitch.pitch_type }}" data-date="{{ pitch.target_date|date:'F j, Y' }}" data-time="{{ pitch.target_time|time:'g:i A' }}" data-location="{{ pitch.location|default:'Location to be announced' }}" data-details="{{ pitch.additional_details|default:'No additional details provided.' }}" data-pdf="{{ pitch.pdf_letter_url|default:'' }}" data-id="{{ pitch.pitch_id }}">View details</button>
+                                <button type="button" class="btn-card-action view-details-btn" 
+                                    data-title="{{ pitch.pitch_title }}" 
+                                    data-type="{{ pitch.pitch_type }}" 
+                                    data-date="{{ pitch.target_date|date:'F j, Y' }}" 
+                                    data-time="{{ pitch.target_time|time:'g:i A' }}" 
+                                    data-location="{{ pitch.location|default:'Location to be announced' }}" 
+                                    data-details="{{ pitch.additional_details|default:'No additional details provided.' }}" 
+                                    data-pdf="{{ pitch.pdf_letter_url|default:'' }}" 
+                                    data-id="{{ pitch.pitch_id }}"
+                                    data-status="{{ pitch.status }}"
+                                    data-submitter="{{ pitch.submitter.name|default:'Editorial Team' }}"
+                                    data-is-owner="{% if pitch.is_owner %}true{% else %}false{% endif %}">
+                                    View Details
+                                </button>
+
+                                {% if not pitch.user_is_assigned and not pitch.user_has_volunteered and pitch.status == 'open' %}
+                                    <button type="button" class="btn-card-volunteer quick-volunteer-btn" data-pitch-id="{{ pitch.pitch_id }}" data-title="{{ pitch.pitch_title }}">
+                                        Volunteer
+                                    </button>
+                                {% endif %}
+
                                 {% if pitch.can_submit_work or pitch.can_review_work %}
                                     <details class="work-submission-details">
-                                        <summary class="submit-work-button">{% if pitch.current_user_submission %}View submission{% elif pitch.can_submit_work %}Submit work{% else %}Review submissions{% endif %}</summary>
+                                        <summary class="submit-work-button">
+                                            {% if pitch.current_user_submission %}
+                                                <span>✓ Work Submitted</span>
+                                            {% elif pitch.can_submit_work %}
+                                                <span>+ Submit Work</span>
+                                            {% else %}
+                                                <span>Review Submissions ({{ pitch.dashboard_submissions|length }})</span>
+                                            {% endif %}
+                                        </summary>
+                                        
                                         <div class="work-submission-panel">
                                             {% if pitch.can_submit_work %}
                                                 <section class="own-submission">
-                                                    <h4>{% if pitch.current_user_submission %}Your submission{% else %}Submit your work{% endif %}</h4>
+                                                    <h4>{% if pitch.current_user_submission %}Your Submission{% else %}Submit Completed Work{% endif %}</h4>
                                                     {% if pitch.current_user_submission %}
-                                                        <a class="submitted-work-link" href="{{ pitch.current_user_submission.submission_url }}" target="_blank" rel="noopener noreferrer">Open your submitted work</a>
+                                                        <div class="existing-link-box">
+                                                            <a class="submitted-work-link" href="{{ pitch.current_user_submission.submission_url }}" target="_blank" rel="noopener noreferrer">
+                                                                🔗 Open Your Work Link ↗
+                                                            </a>
+                                                            <span class="submitted-date">Last updated {{ pitch.current_user_submission.updated_at|date:"M j, Y · g:i A" }}</span>
+                                                        </div>
                                                     {% else %}
-                                                        <p class="submission-help">Share a viewable link to your completed work.</p>
+                                                        <p class="submission-help">Paste the link to your draft, photos, or completed article (Google Docs, Drive, Figma, Canva, etc.).</p>
                                                     {% endif %}
+                                                    
                                                     <form method="POST" action="{% url 'home:home' %}" class="work-link-form">
                                                         {% csrf_token %}
                                                         <input type="hidden" name="action_type" value="submit_work">
                                                         <input type="hidden" name="pitch_id" value="{{ pitch.pitch_id }}">
-                                                        <label for="work-link-{{ pitch.pitch_id }}">{% if pitch.current_user_submission %}Update link{% else %}Work link{% endif %}</label>
-                                                        <input id="work-link-{{ pitch.pitch_id }}" type="url" name="submission_url" maxlength="2048" placeholder="https://" value="{{ pitch.current_user_submission.submission_url|default:'' }}" required>
-                                                        <button type="submit" class="work-form-button">{% if pitch.current_user_submission %}Save link{% else %}Submit work{% endif %}</button>
+                                                        <div class="input-with-button">
+                                                            <input id="work-link-{{ pitch.pitch_id }}" type="url" name="submission_url" maxlength="2048" placeholder="https://docs.google.com/..." value="{{ pitch.current_user_submission.submission_url|default:'' }}" required>
+                                                            <button type="submit" class="work-form-button">
+                                                                {% if pitch.current_user_submission %}Update{% else %}Submit{% endif %}
+                                                            </button>
+                                                        </div>
                                                     </form>
                                                 </section>
                                             {% endif %}
+
+                                            <!-- Review Section & Feedback Thread -->
                                             {% for submission in pitch.dashboard_submissions %}
                                                 {% if submission.is_owned_by_user or pitch.can_review_work %}
                                                     <section class="submission-feedback">
-                                                        {% if pitch.can_review_work and not submission.is_owned_by_user %}
-                                                            <h4>{{ submission.submitter.name }} · {{ submission.submitter.position|default:"Member" }}</h4>
-                                                            <a class="submitted-work-link" href="{{ submission.submission_url }}" target="_blank" rel="noopener noreferrer">Open submitted work</a>
-                                                        {% endif %}
-                                                        <h5>Editor feedback</h5>
+                                                        <div class="feedback-submission-header">
+                                                            <strong>{{ submission.submitter.name }} ({{ submission.submitter.position|default:"Staff" }})</strong>
+                                                            <a class="view-work-link-btn" href="{{ submission.submission_url }}" target="_blank" rel="noopener noreferrer">
+                                                                View Link ↗
+                                                            </a>
+                                                        </div>
+
+                                                        <h5>Editor Feedback & Discussion</h5>
                                                         {% for comment in submission.dashboard_comment_threads %}
                                                             <div class="feedback-thread">
                                                                 <article class="feedback-comment">
-                                                                    <strong>{{ comment.author.name }}{% if comment.author.position %} · {{ comment.author.position }}{% endif %}</strong>
-                                                                    <time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:"M j, Y · g:i A" }}</time>
+                                                                    <div class="comment-head">
+                                                                        <strong>{{ comment.author.name }}{% if comment.author.position %} · {{ comment.author.position }}{% endif %}</strong>
+                                                                        <time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:"M j · g:i A" }}</time>
+                                                                    </div>
                                                                     <p>{{ comment.content|linebreaksbr }}</p>
                                                                 </article>
+                                                                
                                                                 {% for reply in comment.dashboard_replies %}
                                                                     <article class="feedback-comment feedback-reply">
-                                                                        <strong>{{ reply.author.name }}</strong>
-                                                                        <time datetime="{{ reply.created_at|date:'c' }}">{{ reply.created_at|date:"M j, Y · g:i A" }}</time>
+                                                                        <div class="comment-head">
+                                                                            <strong>{{ reply.author.name }}</strong>
+                                                                            <time datetime="{{ reply.created_at|date:'c' }}">{{ reply.created_at|date:"M j · g:i A" }}</time>
+                                                                        </div>
                                                                         <p>{{ reply.content|linebreaksbr }}</p>
                                                                     </article>
                                                                 {% endfor %}
+
                                                                 {% if comment.can_reply %}
                                                                     <form method="POST" action="{% url 'home:home' %}" class="feedback-reply-form">
                                                                         {% csrf_token %}
                                                                         <input type="hidden" name="action_type" value="reply_submission_comment">
                                                                         <input type="hidden" name="submission_id" value="{{ submission.submission_id }}">
                                                                         <input type="hidden" name="parent_comment_id" value="{{ comment.comment_id }}">
-                                                                        <label class="visually-hidden" for="reply-{{ comment.comment_id }}">Reply to {{ comment.author.name }}</label>
-                                                                        <textarea id="reply-{{ comment.comment_id }}" name="content" rows="2" maxlength="5000" placeholder="Reply to this feedback..." required></textarea>
-                                                                        <button type="submit" class="work-form-button">Send reply</button>
+                                                                        <textarea name="content" rows="2" maxlength="5000" placeholder="Reply to feedback..." required></textarea>
+                                                                        <button type="submit" class="work-form-button">Send Reply</button>
                                                                     </form>
                                                                 {% endif %}
                                                             </div>
                                                         {% empty %}
-                                                            <p class="no-feedback">No editor feedback yet.</p>
+                                                            <p class="no-feedback">No editorial comments posted yet.</p>
                                                         {% endfor %}
+
                                                         {% if pitch.can_review_work and not submission.is_owned_by_user %}
                                                             <form method="POST" action="{% url 'home:home' %}" class="editor-comment-form">
                                                                 {% csrf_token %}
                                                                 <input type="hidden" name="action_type" value="editor_comment">
                                                                 <input type="hidden" name="submission_id" value="{{ submission.submission_id }}">
-                                                                <label for="editor-comment-{{ submission.submission_id }}">Add editor feedback</label>
-                                                                <textarea id="editor-comment-{{ submission.submission_id }}" name="content" rows="2" maxlength="5000" placeholder="Share clear, actionable feedback..." required></textarea>
-                                                                <button type="submit" class="work-form-button">Send feedback</button>
+                                                                <textarea name="content" rows="2" maxlength="5000" placeholder="Share editorial notes or feedback on this work..." required></textarea>
+                                                                <button type="submit" class="work-form-button">Send Feedback</button>
                                                             </form>
                                                         {% endif %}
                                                     </section>
                                                 {% endif %}
                                             {% empty %}
-                                                {% if pitch.can_review_work %}<p class="no-feedback">No work has been submitted for review yet.</p>{% endif %}
+                                                {% if pitch.can_review_work and not pitch.can_submit_work %}
+                                                    <p class="no-feedback">No contributor work has been submitted for this pitch yet.</p>
+                                                {% endif %}
                                             {% endfor %}
                                         </div>
                                     </details>
                                 {% endif %}
                             </div>
+
+                            <!-- Volunteer Applicants Review Panel (for Pitch Owner / Editor) -->
+                            {% if pitch.can_review_work and pitch.pending_volunteers %}
+                                <div class="volunteer-review-panel">
+                                    <div class="review-panel-header">
+                                        <strong>Volunteer Applicants ({{ pitch.pending_volunteers|length }})</strong>
+                                    </div>
+                                    <div class="applicants-list">
+                                        {% for resp in pitch.pending_volunteers %}
+                                            <div class="applicant-row">
+                                                <div class="applicant-meta">
+                                                    <span class="applicant-name">{{ resp.volunteer.name }}</span>
+                                                    <span class="applicant-role">{{ resp.role|default:resp.volunteer.position|default:"Staff" }}</span>
+                                                </div>
+                                                <form method="POST" action="{% url 'home:home' %}" class="decision-form">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action_type" value="manage_volunteer">
+                                                    <input type="hidden" name="response_id" value="{{ resp.response_id }}">
+                                                    <button type="submit" name="decision" value="approve" class="btn-decision-approve" title="Assign to pitch">Accept</button>
+                                                    <button type="submit" name="decision" value="decline" class="btn-decision-decline" title="Decline request">Decline</button>
+                                                </form>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
                         </article>
                     {% empty %}
-                        <p class="empty-pitches">No upcoming pitches right now.</p>
+                        <div class="empty-pitches-state">
+                            <span class="empty-icon">📝</span>
+                            <h3>No upcoming pitches yet</h3>
+                            <p>Be the first to pitch a story, event, or coverage for The Technophore Student Publication!</p>
+                            {% if user.is_authenticated %}
+                                <button type="button" class="btn-hero-primary" onclick="document.getElementById('newPitchModal').classList.add('is-open')">Submit a Pitch</button>
+                            {% endif %}
+                        </div>
                     {% endfor %}
                 </div>
             </section>
 
-            {% if user.is_authenticated %}
+            <!-- Work Archive -->
+            {% if user.is_authenticated and previous_submissions %}
                 <section class="work-history-section" aria-labelledby="work-history-heading">
-                    <div class="deliverables-heading">
-                        <h2 class="section-heading" id="work-history-heading">Previous work</h2>
-                        <span>Your latest assignment submissions</span>
+                    <div class="deliverables-heading-bar">
+                        <h2 class="section-heading" id="work-history-heading">My Work Submission History</h2>
+                        <span class="sub-indicator">Previously submitted links</span>
                     </div>
-                    <div class="work-history-list">
+                    <div class="work-history-grid">
                         {% for submission in previous_submissions %}
-                            <details class="work-history-pill">
-                                <summary>
-                                    <span>{{ submission.pitch.pitch_title }}</span>
+                            <div class="work-history-item">
+                                <div class="wh-top">
+                                    <span class="wh-badge">{{ submission.pitch.pitch_type|upper }}</span>
                                     <time datetime="{{ submission.updated_at|date:'c' }}">{{ submission.updated_at|date:"M j, Y" }}</time>
-                                </summary>
-                                <div class="work-history-content">
-                                    <p>Submitted for {{ submission.pitch.pitch_type|default:"pitch" }} · {{ submission.pitch.target_date|date:"F j, Y" }}</p>
-                                    <a href="{{ submission.submission_url }}" target="_blank" rel="noopener noreferrer">Open submitted work</a>
                                 </div>
-                            </details>
-                        {% empty %}
-                            <p class="work-history-empty">Your assignment submissions will appear here.</p>
+                                <h4 class="wh-title">{{ submission.pitch.pitch_title }}</h4>
+                                <a href="{{ submission.submission_url }}" target="_blank" rel="noopener noreferrer" class="wh-link">
+                                    Open Submitted Work ↗
+                                </a>
+                            </div>
                         {% endfor %}
                     </div>
                 </section>
             {% endif %}
         </div>
 
-        <aside class="profile-column" aria-label="Your profile and contributions">
+        <!-- Right Rail - Profile & Desk Summary -->
+        <aside class="profile-column" aria-label="Your profile and desk summary">
             <div class="profile-rail">
-                {% if user.is_authenticated %}
-                    <a class="rail-settings" href="{% url 'user_settings:settings' %}" aria-label="Settings">
-                        <img src="{% static 'images/settings.png' %}" alt="">
-                    </a>
-                {% endif %}
-                <div class="profile-avatar" aria-hidden="true">{% if user.is_authenticated %}{{ user.name|slice:":1"|upper }}{% else %}P{% endif %}</div>
-                {% if user.is_authenticated %}
-                    <h2>{{ user.name|upper }}</h2>
-                    <p class="profile-position">{{ user.position|default:"MEMBER"|upper }}</p>
-                {% else %}
-                    <h2>GUEST</h2>
-                    <p class="profile-position">COMMUNITY</p>
-                    <a class="profile-signin" href="{% url 'login:login' %}">Sign in</a>
-                {% endif %}
-                <h3>My contributions</h3>
-                <div class="contribution-stats">
-                    <div><strong>{{ completed_count }}</strong><span>Completed<br>works</span></div>
-                    <div><strong>{{ ongoing_count }}</strong><span>Ongoing<br>works</span></div>
-                    <div><strong>{{ submitted_count }}</strong><span>Pitches</span></div>
-                    <div><strong>{{ assigned_count }}</strong><span>Assigned<br>works</span></div>
+                <div class="rail-top-actions">
+                    {% if user.is_authenticated %}
+                        <a class="rail-settings-btn" href="{% url 'user_settings:settings' %}" aria-label="Settings" title="Edit Profile & Settings">
+                            <svg viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                            </svg>
+                        </a>
+                    {% endif %}
                 </div>
+
+                <div class="profile-avatar-large" aria-hidden="true">
+                    {% if user.is_authenticated %}
+                        {{ user.name|slice:":1"|upper }}
+                    {% else %}
+                        P
+                    {% endif %}
+                </div>
+
+                {% if user.is_authenticated %}
+                    <h2 class="profile-user-name">{{ user.name }}</h2>
+                    <p class="profile-position-badge">{{ user.position|default:"STAFF MEMBER"|upper }}</p>
+                    <p class="profile-email-text">{{ user.email }}</p>
+                {% else %}
+                    <h2 class="profile-user-name">Guest Contributor</h2>
+                    <p class="profile-position-badge">TTSP Community</p>
+                    <a class="profile-signin-link" href="{% url 'login:login' %}">Sign in to PitchPoint</a>
+                {% endif %}
+
+                <div class="rail-divider"></div>
+
+                <h3 class="rail-stats-title">Desk Statistics</h3>
+                <div class="contribution-stats">
+                    <div class="stat-box">
+                        <strong>{{ submitted_count }}</strong>
+                        <span>Pitches<br>Submitted</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>{{ assigned_count }}</strong>
+                        <span>Assigned<br>Works</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>{{ ongoing_count }}</strong>
+                        <span>Ongoing<br>Tasks</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>{{ completed_count }}</strong>
+                        <span>Completed<br>Stories</span>
+                    </div>
+                </div>
+
+                {% if user.is_authenticated %}
+                    <div class="rail-quick-links">
+                        <a href="{% url 'user_profile:profile' %}" class="rail-link-item">My Editorial Profile →</a>
+                        <a href="{% url 'home:pitches' %}?tab=matched" class="rail-link-item">Openings for My Role →</a>
+                        <a href="{% url 'inbox:inbox' %}" class="rail-link-item">Inbox Notifications ({{ unread_count }}) →</a>
+                    </div>
+                {% endif %}
             </div>
+
             {% if user.is_authenticated %}
-                <button class="rail-submit-pitch" id="openPitchModal" type="button">Submit a pitch<span aria-hidden="true">↗</span></button>
+                <button class="rail-submit-pitch" id="openPitchModalRail" type="button">
+                    <span>+ Submit New Pitch</span>
+                    <span aria-hidden="true">↗</span>
+                </button>
             {% else %}
-                <a class="rail-submit-pitch" href="{% url 'login:login' %}">Sign in to submit a pitch<span aria-hidden="true">↗</span></a>
+                <a class="rail-submit-pitch" href="{% url 'login:login' %}">
+                    <span>Sign in to Submit Pitch</span>
+                    <span aria-hidden="true">↗</span>
+                </a>
             {% endif %}
         </aside>
     </main>
 
+    <!-- Modal 1: Pitch Details & Volunteer Modal -->
     <div class="pitch-modal" id="pitchDetailModal" aria-hidden="true">
         <section class="pitch-modal-content" role="dialog" aria-modal="true" aria-labelledby="modalPitchTitle">
             <button type="button" class="modal-close" id="closePitchModal" aria-label="Close pitch details">&times;</button>
-            <p class="modal-eyebrow">PITCH DETAILS</p>
-            <h2 id="modalPitchTitle"></h2>
+            <span class="modal-eyebrow">PITCH BRIEFING & DETAILS</span>
+            <h2 id="modalPitchTitle" class="modal-main-title"></h2>
+            
             <div class="pitch-detail-grid">
-                <div><span>Type</span><strong id="modalPitchType"></strong></div>
-                <div><span>Date</span><strong id="modalPitchDate"></strong></div>
-                <div><span>Time</span><strong id="modalPitchTime"></strong></div>
-                <div><span>Location</span><strong id="modalPitchLocation"></strong></div>
-                <div class="detail-wide"><span>Additional information</span><p id="modalPitchDetails"></p></div>
+                <div class="detail-cell">
+                    <span>Coverage Type</span>
+                    <strong id="modalPitchType"></strong>
+                </div>
+                <div class="detail-cell">
+                    <span>Target Date</span>
+                    <strong id="modalPitchDate"></strong>
+                </div>
+                <div class="detail-cell">
+                    <span>Scheduled Time</span>
+                    <strong id="modalPitchTime"></strong>
+                </div>
+                <div class="detail-cell">
+                    <span>Venue / Location</span>
+                    <strong id="modalPitchLocation"></strong>
+                </div>
+                <div class="detail-cell detail-wide">
+                    <span>Briefing & Notes</span>
+                    <p id="modalPitchDetails"></p>
+                </div>
             </div>
-            <a id="modalPitchPdf" class="modal-pdf" href="" target="_blank" rel="noopener" hidden>View attached pitch letter</a>
+
+            <div class="modal-pdf-wrapper">
+                <a id="modalPitchPdf" class="modal-pdf" href="" target="_blank" rel="noopener" hidden>
+                    📄 View Attached Official Pitch Letter (PDF) ↗
+                </a>
+            </div>
+
+            <!-- Pitch Status Update (for Pitch Owner / Editor) -->
+            <div id="modalStatusUpdateSection" class="modal-owner-section" style="display: none;">
+                <h4>Manage Pitch Status</h4>
+                <form method="POST" action="{% url 'home:home' %}" class="status-update-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_type" value="update_pitch_status">
+                    <input type="hidden" id="modalStatusPitchId" name="pitch_id" value="">
+                    <select name="status" id="modalStatusSelect" class="status-select-input">
+                        <option value="open">Open (Recruiting)</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <button type="submit" class="btn-update-status">Update Status</button>
+                </form>
+            </div>
+
+            <!-- Volunteer for this Pitch Form -->
             <form method="POST" action="{% url 'home:home' %}" class="volunteer-form">
                 {% csrf_token %}
                 <input type="hidden" name="action_type" value="volunteer">
                 <input type="hidden" id="modalPitchId" name="pitch_id" value="">
+                
                 {% if user.is_authenticated %}
-                    <button type="submit" class="volunteer-button">Volunteer for this pitch</button>
+                    <div class="volunteer-role-select-box">
+                        <label for="volunteerRoleInput">Select Role you are volunteering as:</label>
+                        <select name="role" id="volunteerRoleInput" class="role-select-input">
+                            {% for role in pitch_role_choices %}
+                                <option value="{{ role.label }}" {% if user.position|lower == role.label|lower %}selected{% endif %}>
+                                    {{ role.label }} {% if user.position|lower == role.label|lower %}(Your position){% endif %}
+                                </option>
+                            {% endfor %}
+                            <option value="Other">Other / General Contributor</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="volunteer-button">Confirm & Send Volunteer Application</button>
                 {% else %}
-                    <a class="volunteer-button" href="{% url 'login:login' %}">Sign in to volunteer</a>
+                    <a class="volunteer-button" href="{% url 'login:login' %}">Sign in to volunteer for this pitch</a>
                 {% endif %}
             </form>
         </section>
     </div>
 
+    <!-- Modal 2: Submit a New Pitch Modal -->
     {% if user.is_authenticated %}
         <div class="pitch-modal" id="newPitchModal" aria-hidden="true">
-            <section class="pitch-modal-content" role="dialog" aria-modal="true" aria-labelledby="newPitchTitle">
+            <section class="pitch-modal-content pitch-modal-large" role="dialog" aria-modal="true" aria-labelledby="newPitchTitle">
                 <button type="button" class="modal-close" id="closeNewPitchModal" aria-label="Close pitch form">&times;</button>
-                <p class="modal-eyebrow">CONTRIBUTE TO THE COMMUNITY</p>
-                <h2 id="newPitchTitle">Submit a pitch</h2>
+                <span class="modal-eyebrow">EDITORIAL SUBMISSION</span>
+                <h2 id="newPitchTitle" class="modal-main-title">Submit a New Pitch</h2>
+                <p class="modal-intro-text">Propose a story, event coverage, or multimedia piece for The Technophore Student Publication desk.</p>
+
                 <form method="POST" action="{% url 'home:home' %}" enctype="multipart/form-data" class="new-pitch-form">
                     {% csrf_token %}
                     <input type="hidden" name="action_type" value="create_pitch">
-                    <label>Pitch title<input type="text" name="pitch_title" required></label>
-                    <div class="form-row">
-                        <label>Pitch type<input type="text" name="pitch_type" placeholder="Story, event, article" required></label>
-                        <label>Location<input type="text" name="location" maxlength="255" placeholder="Venue or online"></label>
+
+                    <div class="form-group">
+                        <label for="pitchTitleInput">Pitch Title *</label>
+                        <input id="pitchTitleInput" type="text" name="pitch_title" placeholder="e.g. CCS Week Akwe Coverage 2026" required>
                     </div>
+
                     <div class="form-row">
-                        <label>Date<input type="date" name="target_date" required></label>
-                        <label>Time<input type="time" name="target_time" required></label>
+                        <div class="form-group">
+                            <label for="pitchTypeInput">Coverage / Pitch Type *</label>
+                            <input id="pitchTypeInput" type="text" name="pitch_type" list="pitchTypeSuggestions" placeholder="Event Coverage, Feature, Editorial..." required>
+                            <datalist id="pitchTypeSuggestions">
+                                <option value="Event Coverage">
+                                <option value="Feature Article">
+                                <option value="News Report">
+                                <option value="Photo Essay">
+                                <option value="Editorial">
+                                <option value="Social Media Campaign">
+                                <option value="Interview / Profile">
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <label for="pitchLocationInput">Venue or Platform</label>
+                            <input id="pitchLocationInput" type="text" name="location" maxlength="255" placeholder="e.g. CIT-U Gymnasium / Wildcat Radio">
+                        </div>
                     </div>
-                    <label>Additional details<textarea name="additional_details" rows="3"></textarea></label>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pitchDateInput">Target Date *</label>
+                            <input id="pitchDateInput" type="date" name="target_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pitchTimeInput">Target Time *</label>
+                            <input id="pitchTimeInput" type="time" name="target_time" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pitchDetailsInput">Briefing & Additional Details</label>
+                        <textarea id="pitchDetailsInput" name="additional_details" rows="3" placeholder="Provide background, angle, interviewees, or key requirements..."></textarea>
+                    </div>
+
                     <fieldset class="pitch-role-needs">
-                        <legend>Roles needed</legend>
-                        <p>Select the positions to recruit and the number of people needed for each.</p>
+                        <legend>Staff Roles Needed for this Coverage</legend>
+                        <p class="fieldset-help">Check which desks to recruit and specify how many contributors are needed:</p>
                         <div class="role-need-grid">
                             {% for role in pitch_role_choices %}
                                 <label class="role-need-option">
-                                    <span><input type="checkbox" name="needed_roles" value="{{ role.key }}" data-role-toggle="{{ role.key }}"> {{ role.label }}</span>
-                                    <input type="number" name="slots_{{ role.key }}" min="1" max="20" value="1" aria-label="Number of {{ role.label }} needed" disabled>
+                                    <span class="role-checkbox-label">
+                                        <input type="checkbox" name="needed_roles" value="{{ role.key }}" data-role-toggle="{{ role.key }}"> 
+                                        {{ role.label }}
+                                    </span>
+                                    <span class="slots-input-wrap">
+                                        <input type="number" name="slots_{{ role.key }}" min="1" max="20" value="1" aria-label="Number of {{ role.label }} needed" disabled>
+                                        <small>spots</small>
+                                    </span>
                                 </label>
                             {% endfor %}
                         </div>
                     </fieldset>
-                    <label>Pitch letter (PDF)<input type="file" name="pdf_file" accept=".pdf,application/pdf"></label>
-                    <button type="submit" class="volunteer-button">Submit pitch</button>
+
+                    <div class="form-group file-upload-group">
+                        <label for="pdfFileInput">Attach Pitch Letter / Activity Endorsement (PDF)</label>
+                        <input id="pdfFileInput" type="file" name="pdf_file" accept=".pdf,application/pdf">
+                        <span class="file-help">Upload an approved activity request or pitch document (Optional).</span>
+                    </div>
+
+                    <div class="modal-form-actions">
+                        <button type="button" class="btn-cancel" onclick="document.getElementById('newPitchModal').classList.remove('is-open')">Cancel</button>
+                        <button type="submit" class="volunteer-button">Submit Pitch for Review</button>
+                    </div>
                 </form>
             </section>
         </div>
     {% endif %}
 
-    <script src="{% static 'js/home/dashboard.js' %}?v=3" defer></script>
+    <script src="{% static 'js/home/dashboard.js' %}?v=4" defer></script>
 </body>
 </html>

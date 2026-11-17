@@ -5,53 +5,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
-    <title>Inbox | PitchPoint</title>
-    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=1">
-    <link rel="stylesheet" href="{% static 'css/inbox/inbox.css' %}?v=1">
+    <title>Inbox | PitchPoint — TTSP Editorial</title>
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'css/inbox/inbox.css' %}?v=4">
 </head>
 <body class="dashboard-page inbox-page">
-    <header class="dashboard-header">
-        <a class="dashboard-brand" href="{% url 'home:home' %}" aria-label="PitchPoint dashboard">
-            <img src="{% static 'images/logo.png' %}" alt="">
-            <span>ITCH POINT.</span>
-        </a>
-        <nav class="dashboard-nav" aria-label="Dashboard navigation">
-            <a href="{% url 'home:home' %}">Dashboard</a>
-            <a href="{% url 'home:pitches' %}">Pitches</a>
-            <a class="is-current" href="{% url 'inbox:inbox' %}">Inbox{% if unread_count %}<span class="nav-count">{{ unread_count }}</span>{% endif %}</a>
-        </nav>
-        <a href="{% url 'login:logout' %}" class="dashboard-logout">Logout</a>
-    </header>
+    {% include 'partials/dashboard_nav.html' with active_page='inbox' %}
 
     <main class="inbox-shell">
-        <div class="inbox-heading">
-            <div>
-                <p class="inbox-eyebrow">PITCHPOINT COMMUNITY</p>
-                <h1>Inbox</h1>
-                <p class="inbox-intro">Updates about your pitches and contributions.</p>
+        {% if messages %}
+            <div class="inbox-messages-banner" aria-live="polite">
+                {% for message in messages %}
+                    <div class="inbox-alert-message {% if message.tags %}is-{{ message.tags }}{% endif %}">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
             </div>
-            <span class="inbox-unread-count">{{ unread_count }} unread</span>
+        {% endif %}
+
+        <!-- Top Header & Actions Bar -->
+        <div class="inbox-heading-bar">
+            <div class="inbox-heading-text">
+                <span class="inbox-eyebrow">THE TECHNOPHORE STUDENT PUBLICATION · EDITORIAL NOTIFICATIONS</span>
+                <h1>Editorial Inbox</h1>
+                <p class="inbox-intro">Stay updated on pitch applications, editorial feedback, and assignment alerts.</p>
+            </div>
+
+            <div class="inbox-global-actions">
+                {% if unread_count > 0 %}
+                    <form method="POST" action="{% url 'inbox:inbox' %}" class="inline-action-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="mark_all_read">
+                        <button type="submit" class="btn-inbox-action btn-mark-all">
+                            ✓ Mark All as Read ({{ unread_count }})
+                        </button>
+                    </form>
+                {% endif %}
+                {% if total_count > unread_count %}
+                    <form method="POST" action="{% url 'inbox:inbox' %}" class="inline-action-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="clear_read">
+                        <button type="submit" class="btn-inbox-action btn-clear-read" onclick="return confirm('Clear all read notifications?')">
+                            Clear Read
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
 
-        <section class="notification-list" aria-label="Notifications">
+        <!-- Filter Tabs Bar -->
+        <div class="inbox-filter-bar">
+            <nav class="inbox-tabs">
+                <a href="{% url 'inbox:inbox' %}?filter=all" class="inbox-tab {% if active_filter == 'all' %}is-active{% endif %}">
+                    All ({{ total_count }})
+                </a>
+                <a href="{% url 'inbox:inbox' %}?filter=unread" class="inbox-tab {% if active_filter == 'unread' %}is-active{% endif %}">
+                    Unread {% if unread_count > 0 %}<span class="tab-unread-pill">{{ unread_count }}</span>{% endif %}
+                </a>
+                <a href="{% url 'inbox:inbox' %}?filter=pitches" class="inbox-tab {% if active_filter == 'pitches' %}is-active{% endif %}">
+                    Pitches & Assignments
+                </a>
+                <a href="{% url 'inbox:inbox' %}?filter=feedback" class="inbox-tab {% if active_filter == 'feedback' %}is-active{% endif %}">
+                    Editorial Feedback
+                </a>
+            </nav>
+        </div>
+
+        <!-- Notification List -->
+        <section class="notification-list" aria-label="Notifications list">
             {% for notification in notifications %}
-                <article class="notification-item{% if not notification.is_read %} is-unread{% endif %}">
-                    <span class="notification-mark" aria-hidden="true">{{ notification.message|slice:":1"|upper }}</span>
-                    <div class="notification-copy">
-                        <p>{{ notification.message }}</p>
-                        {% if notification.pitch %}<span>{{ notification.pitch.pitch_title }}</span>{% endif %}
+                <article class="notification-card {% if not notification.is_read %}is-unread{% endif %}">
+                    <!-- Icon Indicator -->
+                    <div class="notification-icon-wrap" aria-hidden="true">
+                        {% if "assigned" in notification.message|lower or "approved" in notification.message|lower %}
+                            <span class="icon-indicator icon-assignment">✓</span>
+                        {% elif "feedback" in notification.message|lower or "comment" in notification.message|lower or "replied" in notification.message|lower %}
+                            <span class="icon-indicator icon-feedback">💬</span>
+                        {% elif "volunteered" in notification.message|lower or "applied" in notification.message|lower %}
+                            <span class="icon-indicator icon-volunteer">🙋</span>
+                        {% else %}
+                            <span class="icon-indicator icon-pitch">📋</span>
+                        {% endif %}
                     </div>
-                    <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"M j, Y · g:i A" }}</time>
+
+                    <!-- Message Body & Pitch Badge -->
+                    <div class="notification-content">
+                        <p class="notification-text">{{ notification.message }}</p>
+                        
+                        <div class="notification-meta-row">
+                            {% if notification.pitch %}
+                                <a href="{% url 'home:home' %}#deliverables" class="notification-pitch-pill" title="View deliverable on dashboard">
+                                    📌 {{ notification.pitch.pitch_title }}
+                                </a>
+                            {% endif %}
+                            <time datetime="{{ notification.created_at|date:'c' }}" class="notification-timestamp">
+                                {{ notification.created_at|date:"M j, Y · g:i A" }}
+                            </time>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="notification-actions">
+                        {% if not notification.is_read %}
+                            <form method="POST" action="{% url 'inbox:inbox' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="mark_read">
+                                <input type="hidden" name="notification_id" value="{{ notification.notification_id }}">
+                                <button type="submit" class="btn-notif-action" title="Mark as read">Mark Read</button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="{% url 'inbox:inbox' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="mark_unread">
+                                <input type="hidden" name="notification_id" value="{{ notification.notification_id }}">
+                                <button type="submit" class="btn-notif-action is-muted" title="Mark as unread">Mark Unread</button>
+                            </form>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'inbox:inbox' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="notification_id" value="{{ notification.notification_id }}">
+                            <button type="submit" class="btn-notif-delete" title="Delete notification" aria-label="Delete">×</button>
+                        </form>
+                    </div>
                 </article>
             {% empty %}
-                <div class="inbox-empty">
-                    <span class="empty-mark" aria-hidden="true">P</span>
-                    <h2>You’re all caught up</h2>
-                    <p>Notifications about your activity will appear here.</p>
+                <div class="inbox-empty-card">
+                    <span class="inbox-empty-icon" aria-hidden="true">📬</span>
+                    <h2>You're all caught up!</h2>
+                    <p>No notifications found under this filter. Updates about pitch approvals, volunteer applications, and editorial feedback will appear here.</p>
+                    <a class="btn-return-dashboard" href="{% url 'home:home' %}">Return to Dashboard →</a>
                 </div>
             {% endfor %}
         </section>
-        <a class="back-dashboard" href="{% url 'home:home' %}">Back to dashboard</a>
     </main>
 </body>
 </html>

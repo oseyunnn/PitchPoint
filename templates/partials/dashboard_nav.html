@@ -1,0 +1,75 @@
+{% load static %}
+<header class="dashboard-header-bar">
+    <div class="header-inner">
+        <div class="header-left">
+            <a class="dashboard-brand-link" href="{% url 'home:home' %}" aria-label="PitchPoint Dashboard">
+                <img src="{% static 'images/logo.png' %}" alt="PitchPoint" class="brand-logo-img">
+                <div class="brand-titles">
+                    <span class="brand-name">PITCHPOINT</span>
+                    <span class="brand-sub">TTSP · STUDENT PUBLICATION</span>
+                </div>
+            </a>
+            
+            <nav class="dashboard-nav-menu" aria-label="Main Navigation">
+                <a class="nav-item {% if active_page == 'dashboard' %}is-active{% endif %}" href="{% url 'home:home' %}">
+                    <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item {% if active_page == 'pitches' %}is-active{% endif %}" href="{% url 'home:pitches' %}">
+                    <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
+                    </svg>
+                    <span>Pitches</span>
+                </a>
+                <a class="nav-item {% if active_page == 'inbox' %}is-active{% endif %}" href="{% url 'inbox:inbox' %}">
+                    <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                    </svg>
+                    <span>Inbox</span>
+                    {% if unread_count and unread_count > 0 %}
+                        <span class="nav-badge">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+            </nav>
+        </div>
+
+        <div class="header-right">
+            {% if user.is_authenticated %}
+                <button type="button" class="btn-header-pitch" id="openPitchModalHeader" onclick="document.getElementById('newPitchModal') ? document.getElementById('newPitchModal').classList.add('is-open') : window.location.href='{% url 'home:home' %}#submit-pitch'">
+                    <span class="plus-icon">+</span>
+                    <span>Submit Pitch</span>
+                </button>
+
+                <div class="user-profile-menu">
+                    <a href="{% url 'user_profile:profile' %}" class="user-chip" title="View Profile">
+                        <div class="user-avatar-circle">
+                            {{ user.name|slice:":1"|upper|default:"U" }}
+                        </div>
+                        <div class="user-info-text">
+                            <span class="user-name-text">{{ user.name }}</span>
+                            <span class="user-role-badge">{{ user.position|default:"Member"|upper }}</span>
+                        </div>
+                    </a>
+
+                    <a href="{% url 'user_settings:settings' %}" class="header-icon-btn {% if active_page == 'settings' %}is-active{% endif %}" title="Settings" aria-label="Settings">
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="action-icon">
+                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                        </svg>
+                    </a>
+
+                    <a href="{% url 'login:logout' %}" class="btn-logout" title="Sign out">
+                        <span>Sign out</span>
+                    </a>
+                </div>
+            {% else %}
+                <div class="guest-nav-links">
+                    <a href="{% url 'login:login' %}" class="btn-login-link">Log in</a>
+                    <a href="{% url 'register:register' %}" class="btn-register-link">Register</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</header>

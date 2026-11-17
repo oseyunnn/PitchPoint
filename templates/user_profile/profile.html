@@ -3,118 +3,133 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Profile - PitchPoint</title>
-    <link rel="stylesheet" href="{% static 'css/user_profile/user_profile.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <title>{{ full_name }} | PitchPoint Profile</title>
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'css/user_profile/user_profile.css' %}?v=4">
 </head>
-<body>
+<body class="dashboard-page profile-page">
+    {% include 'partials/dashboard_nav.html' with active_page='profile' %}
 
-    <!-- Header Navigation -->
-    {% load static %}
-    <header class="header">
-        <div class="logo-area">
-            <a href="{% url 'home:home' %}">
-                <img src="{% static 'images/logo.png' %}" class="top-logo" alt="PitchPoint Logo">
-            </a>
-        </div>
-        <div class="nav-right">
-            <!-- Settings Icon redirecting to User Settings Page -->
-            <a href="{% url 'user_settings:settings' %}">
-                <img src="{% static 'images/settings.png' %}" class="nav-icon" alt="Settings">
-            </a>
-            <!-- Notifications Icon -->
-            <img src="{% static 'images/notifications.png' %}" class="nav-icon" alt="Notifications">
-            <!-- Logout Link -->
-            <a href="{% url 'login:login' %}" class="logout-link">Logout</a>
-        </div>
-    </header>
-    <!-- Main Container -->
-    <main class="container">
-        <!-- User Profile Header -->
-        <div class="profile-header">
-            <div class="profile-avatar"></div>
-            <h2 class="user-name">{{ full_name|upper }}</h2>
-            <p class="user-meta">@{{ username }} | {{ position|upper }}</p>
+    <main class="profile-container">
+        <!-- User Profile Card -->
+        <section class="profile-hero-card">
+            <div class="profile-hero-main">
+                <div class="profile-avatar-giant">
+                    {{ full_name|slice:":1"|upper|default:"U" }}
+                </div>
+                <div class="profile-titles">
+                    <span class="publication-badge">THE TECHNOPHORE STUDENT PUBLICATION</span>
+                    <h1 class="user-full-name">{{ full_name }}</h1>
+                    <div class="user-meta-pills">
+                        <span class="user-handle-pill">@{{ username }}</span>
+                        <span class="user-position-pill">{{ position|upper }}</span>
+                        <span class="user-inst-pill">CIT-U</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-hero-actions">
+                <a href="{% url 'user_settings:settings' %}" class="btn-edit-profile">
+                    <span>Edit Profile & Settings</span>
+                    <span aria-hidden="true">⚙️</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Information & Stats Row -->
+        <div class="profile-details-grid">
+            <!-- Student & Contact Card -->
+            <div class="profile-info-card">
+                <h3>Institutional & Contact Details</h3>
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        <span class="info-val">{{ email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Desk / Position:</span>
+                        <span class="info-val font-semibold">{{ position|default:"General Staff" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Degree Program:</span>
+                        <span class="info-val">{{ course|default:"Not specified" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Year Level:</span>
+                        <span class="info-val">{% if year_level %}{{ year_level }} Year{% else %}Not specified{% endif %}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Student ID:</span>
+                        <span class="info-val">{{ student_id|default:"Not specified" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Contact Number:</span>
+                        <span class="info-val">{{ contact_number|default:"Not specified" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Publication Activity Card -->
+            <div class="profile-stats-card">
+                <h3>Editorial Activity</h3>
+                <div class="stats-counter-row">
+                    <div class="stat-counter-box">
+                        <strong>{{ submitted_count }}</strong>
+                        <span>Pitches Created</span>
+                    </div>
+                    <div class="stat-counter-box">
+                        <strong>{{ assigned_count }}</strong>
+                        <span>Assignments</span>
+                    </div>
+                </div>
+                <div class="profile-shortcuts">
+                    <a href="{% url 'home:home' %}" class="btn-shortcut">Go to Dashboard →</a>
+                    <a href="{% url 'home:pitches' %}" class="btn-shortcut">Find More Pitches →</a>
+                </div>
+            </div>
         </div>
 
         <!-- Coverages Section -->
         <section class="coverages-section">
-            <h3 class="section-title">MY INCOMING COVERAGES</h3>
-            <div class="coverages-box">
-                <div class="coverages-grid">
-                    {% for pitch in pitches %}
-                        <div class="pitch-card">
-                            <h4 class="card-title">{{ pitch.title|upper }}</h4>
-                            <p class="card-date">{{ pitch.date|date:"F d, Y"|upper }} | {{ pitch.start_time|time:"g:i A" }}</p>
-                            <button class="btn-view-more" 
-                                    data-title="{{ pitch.title }}"
-                                    data-date="{{ pitch.date|date:'F d, Y' }}"
-                                    data-time="{{ pitch.start_time|time:'g:i A' }} - {{ pitch.end_time|time:'g:i A' }}"
-                                    data-type="{{ pitch.pitch_type }}"
-                                    data-org="{{ pitch.organization }}"
-                                    data-email="{{ pitch.active_email }}"
-                                    data-id="{{ pitch.id_number }}"
-                                    data-contact="{{ pitch.contact_number }}">
-                                VIEW MORE
-                            </button>
-                        </div>
-                    {% empty %}
-                        <p class="no-pitches">No incoming coverages assigned.</p>
-                    {% endfor %}
+            <div class="section-head-row">
+                <div>
+                    <h2>My Publication Pitches & Coverages</h2>
+                    <p class="section-sub">Stories and event assignments you created or are assigned to.</p>
                 </div>
+                <span class="coverages-badge">{{ pitches|length }} total</span>
+            </div>
+
+            <div class="coverages-grid">
+                {% for pitch in pitches %}
+                    <div class="pitch-coverage-card">
+                        <div class="coverage-topline">
+                            <span class="coverage-type">{{ pitch.pitch_type|upper }}</span>
+                            <span class="coverage-status status-{{ pitch.status|lower }}">{{ pitch.status|title }}</span>
+                        </div>
+                        <h4 class="coverage-title">{{ pitch.pitch_title }}</h4>
+                        <p class="coverage-meta">
+                            📅 {{ pitch.target_date|date:"F j, Y" }} · {{ pitch.target_time|time:"g:i A" }}
+                        </p>
+                        <p class="coverage-venue">
+                            📍 {{ pitch.location|default:"CIT-U Campus / Online" }}
+                        </p>
+                        <div class="coverage-footer">
+                            <a href="{% url 'home:home' %}#deliverables" class="btn-open-coverage">
+                                Open on Dashboard →
+                            </a>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="no-coverages-box">
+                        <span class="empty-emoji">📝</span>
+                        <p>No publication coverages or pitches recorded yet.</p>
+                        <a href="{% url 'home:pitches' %}" class="btn-explore-pitches">Explore Open Pitches</a>
+                    </div>
+                {% endfor %}
             </div>
         </section>
     </main>
-
-    <!-- Dark Details Modal Popup -->
-    <div id="detailsModal" class="modal-overlay">
-        <div class="modal-content">
-            <span id="closeModalBtn" class="close-btn">&times;</span>
-            <h3 class="modal-title">COVERAGE DETAILS</h3>
-
-            <div class="modal-details-grid">
-                <div class="detail-group full-width">
-                    <label>TITLE</label>
-                    <div class="detail-value" id="modalTitle"></div>
-                </div>
-
-                <div class="detail-group">
-                    <label>DATE</label>
-                    <div class="detail-value" id="modalDate"></div>
-                </div>
-
-                <div class="detail-group">
-                    <label>TIME</label>
-                    <div class="detail-value" id="modalTime"></div>
-                </div>
-
-                <div class="detail-group">
-                    <label>PITCH TYPE</label>
-                    <div class="detail-value" id="modalType"></div>
-                </div>
-
-                <div class="detail-group">
-                    <label>ORGANIZATION</label>
-                    <div class="detail-value" id="modalOrg"></div>
-                </div>
-
-                <div class="detail-group">
-                    <label>CONTACT EMAIL</label>
-                    <div class="detail-value" id="modalEmail"></div>
-                </div>
-
-                <div class="detail-group">
-                    <label>ID NUMBER</label>
-                    <div class="detail-value" id="modalId"></div>
-                </div>
-
-                <div class="detail-group full-width">
-                    <label>CONTACT NUMBER</label>
-                    <div class="detail-value" id="modalContact"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="{% static 'js/user_profile/user_profile.js' %}"></script>
 </body>
 </html>

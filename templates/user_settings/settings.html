@@ -3,116 +3,238 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Settings - PitchPoint</title>
-    <!-- CSS File -->
-    <link rel="stylesheet" href="{% static 'css/user_settings/settings.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <title>Account Settings | PitchPoint — TTSP Editorial</title>
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'css/user_settings/settings.css' %}?v=4">
 </head>
-<body>
-
-    <header class="header">
-        <a href="{% url 'home:home' %}">
-            <img src="{% static 'images/logo.png' %}" class="top-logo" alt="PitchPoint Logo">
-        </a>
-        <div class="nav-right">
-            <a href="{% url 'user_settings:settings' %}">
-                <img src="{% static 'images/settings.png' %}" class="nav-icon" alt="Settings">
-            </a>
-            <img src="{% static 'images/notifications.png' %}" class="nav-icon" alt="Notifications">
-            <a href="{% url 'login:login' %}" class="logout-link">Logout</a>
-        </div>
-    </header>
+<body class="dashboard-page settings-page">
+    {% include 'partials/dashboard_nav.html' with active_page='settings' %}
 
     <main class="settings-container">
-        <h2 class="main-title">SETTINGS</h2>
+        <!-- Header -->
+        <div class="settings-header-banner">
+            <div>
+                <span class="settings-eyebrow">THE TECHNOPHORE STUDENT PUBLICATION · USER PREFERENCES</span>
+                <h1 class="main-title">Account & Editorial Settings</h1>
+                <p class="settings-subtitle">Manage your publication profile, contact details, and account security.</p>
+            </div>
+            <a href="{% url 'user_profile:profile' %}" class="btn-view-public-profile">
+                <span>View My Profile</span>
+                <span aria-hidden="true">→</span>
+            </a>
+        </div>
+
+        {% if messages %}
+            <div class="settings-alerts" aria-live="polite">
+                {% for message in messages %}
+                    <div class="alert-box alert-{{ message.tags }}">
+                        <span>{% if message.tags == 'error' %}⚠️{% elif message.tags == 'success' %}✓{% else %}ℹ{% endif %}</span>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <div class="settings-layout">
             <!-- Sidebar Navigation -->
             <aside class="settings-sidebar">
-                <ul>
-                    <li class="active">PERSONAL INFORMATION</li>
-                    <li>DISPLAY MODE</li>
-                    <li>DEACTIVATE/DELETE</li>
-                </ul>
-            </aside>
-
-            <!-- Main Settings Card -->
-            <section class="settings-card">
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert-{{ message.tags }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-
-                <!-- Username Field -->
-                <form method="POST" class="field-group">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="update_username">
-                    <div class="label-header">
-                        <label>USERNAME:</label>
-                        <button type="button" class="btn-action toggle-btn">UPDATE</button>
+                <div class="settings-user-card">
+                    <div class="sidebar-avatar">
+                        {{ user.name|slice:":1"|upper }}
                     </div>
-                    <input type="text" name="username" value="{{ username }}" class="read-only-input" readonly required>
-                </form>
-
-                <!-- Position Field -->
-                <form method="POST" class="field-group">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="update_position">
-                    <div class="label-header">
-                        <label>POSITION</label>
-                        <button type="button" class="btn-action toggle-btn">UPDATE</button>
-                    </div>
-                    <input type="text" name="position" value="{{ position }}" class="read-only-input" readonly required>
-                </form>
-
-                <!-- Profile Picture Field -->
-                <div class="field-group">
-                    <label>PROFILE PICTURE</label>
-                    <div class="avatar-row">
-                        <div class="avatar-circle"></div>
-                        <button type="button" class="btn-action">UPDATE</button>
+                    <div class="sidebar-user-meta">
+                        <strong>{{ user.name }}</strong>
+                        <span class="user-position-tag">{{ user.position|default:"Staff Member" }}</span>
                     </div>
                 </div>
 
-                <!-- Password Block (Toggles into 3 inputs) -->
-                <form method="POST" id="passwordBlock" class="field-group">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="update_password">
+                <ul class="settings-nav-list" role="tablist">
+                    <li class="tab-item is-active" data-target="tab-profile">
+                        <span class="tab-icon">👤</span>
+                        <span>Profile & Editorial Desk</span>
+                    </li>
+                    <li class="tab-item" data-target="tab-student">
+                        <span class="tab-icon">🎓</span>
+                        <span>Student Information</span>
+                    </li>
+                    <li class="tab-item" data-target="tab-security">
+                        <span class="tab-icon">🔒</span>
+                        <span>Security & Password</span>
+                    </li>
+                </ul>
 
-                    <!-- Initial State -->
-                    <div id="passInitial">
-                        <div class="label-header">
-                            <label>PASSWORD</label>
-                            <button type="button" id="btnUpdatePass" class="btn-action">UPDATE</button>
-                        </div>
-                        <input type="password" value="********" class="read-only-input pass-asterisk" readonly>
+                <div class="sidebar-footer-note">
+                    <p>PitchPoint v2.0</p>
+                    <small>Official Editorial Management Platform for The Technophore Student Publication.</small>
+                </div>
+            </aside>
+
+            <!-- Main Content Card -->
+            <section class="settings-card">
+                <!-- Panel 1: Profile & Editorial Desk -->
+                <div id="tab-profile" class="settings-panel is-active">
+                    <div class="panel-header">
+                        <h2>Personal & Publication Profile</h2>
+                        <p>This information is visible across pitch assignments, deliverables, and editorial reviews.</p>
                     </div>
 
-                    <!-- Expanded State (Hidden by default) -->
-                    <div id="passExpanded" style="display: none;">
-                        <div class="label-header">
-                            <label>OLD PASSWORD:</label>
-                            <button type="submit" class="btn-action btn-save">SAVE</button>
-                        </div>
-                        <input type="password" name="old_password" placeholder="*******" class="editable-input" required>
+                    <form method="POST" action="{% url 'user_settings:settings' %}" class="settings-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_profile">
 
-                        <div class="label-header" style="margin-top: 15px;">
-                            <label>NEW PASSWORD:</label>
-                        </div>
-                        <input type="password" name="new_password" placeholder="*******" class="editable-input" required>
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label for="nameInput">Full Name *</label>
+                                <input id="nameInput" type="text" name="name" value="{{ name }}" required>
+                                <span class="field-hint">Your complete name as it appears in publication bylines.</span>
+                            </div>
 
-                        <div class="label-header" style="margin-top: 15px;">
-                            <label>CONFIRM PASSWORD:</label>
+                            <div class="form-field">
+                                <label for="usernameInput">Username *</label>
+                                <div class="input-prefix-group">
+                                    <span class="input-prefix">@</span>
+                                    <input id="usernameInput" type="text" name="username" value="{{ username }}" required>
+                                </div>
+                                <span class="field-hint">Unique handle for editorial mentions and assignments.</span>
+                            </div>
                         </div>
-                        <input type="password" name="confirm_password" placeholder="*******" class="editable-input" required>
+
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label for="emailInput">Institutional Email (Login ID)</label>
+                                <input id="emailInput" type="email" value="{{ email }}" readonly class="input-readonly">
+                                <span class="field-hint">Primary institutional address registered with TTSP.</span>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="positionInput">TTSP Editorial Desk / Position *</label>
+                                <select id="positionInput" name="position" class="select-input">
+                                    <option value="">Select your position...</option>
+                                    {% for val, label in position_choices %}
+                                        <option value="{{ val }}" {% if position|lower == val|lower %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <span class="field-hint">Determines role-matched opportunities on the Pitch Board.</span>
+                            </div>
+                        </div>
+
+                        <!-- Preserving existing student fields on update -->
+                        <input type="hidden" name="student_id" value="{{ student_id }}">
+                        <input type="hidden" name="course" value="{{ course }}">
+                        <input type="hidden" name="year_level" value="{{ year_level }}">
+                        <input type="hidden" name="contact_number" value="{{ contact_number }}">
+
+                        <div class="form-actions-bar">
+                            <button type="submit" class="btn-save-settings">Save Profile Changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Panel 2: Student Information -->
+                <div id="tab-student" class="settings-panel">
+                    <div class="panel-header">
+                        <h2>CIT-U Student Details</h2>
+                        <p>Used by publication management to verify student standing and coordination.</p>
                     </div>
-                </form>
 
+                    <form method="POST" action="{% url 'user_settings:settings' %}" class="settings-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_profile">
+
+                        <!-- Preserving profile fields -->
+                        <input type="hidden" name="name" value="{{ name }}">
+                        <input type="hidden" name="username" value="{{ username }}">
+                        <input type="hidden" name="position" value="{{ position }}">
+
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label for="studentIdInput">Student ID Number</label>
+                                <input id="studentIdInput" type="text" name="student_id" value="{{ student_id }}" placeholder="e.g. 21-1234-567">
+                                <span class="field-hint">Official Cebu Institute of Technology ID number.</span>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="contactNumberInput">Contact / Mobile Number</label>
+                                <input id="contactNumberInput" type="text" name="contact_number" value="{{ contact_number }}" placeholder="e.g. 0917 123 4567">
+                                <span class="field-hint">For urgent pitch assignments and event coverage alerts.</span>
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label for="courseInput">Degree Program / Course</label>
+                                <input id="courseInput" type="text" name="course" value="{{ course }}" placeholder="e.g. BS Computer Science">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="yearLevelInput">Year Level</label>
+                                <select id="yearLevelInput" name="year_level" class="select-input">
+                                    <option value="">Select year level...</option>
+                                    <option value="1" {% if year_level == 1 %}selected{% endif %}>1st Year</option>
+                                    <option value="2" {% if year_level == 2 %}selected{% endif %}>2nd Year</option>
+                                    <option value="3" {% if year_level == 3 %}selected{% endif %}>3rd Year</option>
+                                    <option value="4" {% if year_level == 4 %}selected{% endif %}>4th Year</option>
+                                    <option value="5" {% if year_level == 5 %}selected{% endif %}>5th Year</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions-bar">
+                            <button type="submit" class="btn-save-settings">Save Student Information</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Panel 3: Security & Password -->
+                <div id="tab-security" class="settings-panel">
+                    <div class="panel-header">
+                        <h2>Account Security & Password</h2>
+                        <p>Change your password to keep your PitchPoint editorial account secure.</p>
+                    </div>
+
+                    <form method="POST" action="{% url 'user_settings:settings' %}" class="settings-form" id="passwordForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_password">
+
+                        <div class="form-field max-w-400">
+                            <label for="oldPasswordInput">Current Password *</label>
+                            <input id="oldPasswordInput" type="password" name="old_password" placeholder="••••••••" required>
+                        </div>
+
+                        <div class="form-row-2 max-w-600">
+                            <div class="form-field">
+                                <label for="newPasswordInput">New Password *</label>
+                                <input id="newPasswordInput" type="password" name="new_password" minlength="8" placeholder="At least 8 characters" required>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="confirmPasswordInput">Confirm New Password *</label>
+                                <input id="confirmPasswordInput" type="password" name="confirm_password" minlength="8" placeholder="Repeat new password" required>
+                            </div>
+                        </div>
+
+                        <div class="password-checklist">
+                            <span>Password requirements:</span>
+                            <ul>
+                                <li>Minimum of 8 characters</li>
+                                <li>Must match confirmation exactly</li>
+                                <li>Keeps your active session authenticated</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-actions-bar">
+                            <button type="submit" class="btn-save-settings">Update Password</button>
+                        </div>
+                    </form>
+                </div>
             </section>
         </div>
     </main>
 
-    <!-- JS File -->
-    <script src="{% static 'js/user_settings/settings.js' %}"></script>
+    <script src="{% static 'js/user_settings/settings.js' %}?v=4"></script>
 </body>
 </html>

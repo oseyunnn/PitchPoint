@@ -5,182 +5,278 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
-    <title>Pitches | PitchPoint</title>
-    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=2">
-    <link rel="stylesheet" href="{% static 'css/home/pitches.css' %}?v=1">
+    <title>Pitches Board | PitchPoint — TTSP Editorial</title>
+    <link rel="stylesheet" href="{% static 'css/home/dashboard.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'css/home/pitches.css' %}?v=4">
 </head>
 <body class="dashboard-page pitches-page">
-    <header class="dashboard-header">
-        <div class="dashboard-brand-menu">
-            <a class="dashboard-brand" href="{% url 'home:home' %}" aria-label="PitchPoint dashboard">
-                <img src="{% static 'images/logo.png' %}" alt="">
-                <span>ITCH POINT.</span>
-            </a>
-            <nav class="dashboard-nav" aria-label="Dashboard navigation">
-                <a href="{% url 'home:home' %}">Dashboard</a>
-                <a class="is-current" href="{% url 'home:pitches' %}">Pitches</a>
-                <a href="{% url 'inbox:inbox' %}">Inbox</a>
-            </nav>
-        </div>
-        <a href="{% url 'login:logout' %}" class="dashboard-logout">Logout</a>
-    </header>
+    {% include 'partials/dashboard_nav.html' with active_page='pitches' %}
 
     <main class="pitches-shell">
         {% if messages %}
             <div class="pitches-messages" aria-live="polite">
-                {% for message in messages %}<p class="pitches-message">{{ message }}</p>{% endfor %}
+                {% for message in messages %}
+                    <div class="pitches-message {% if message.tags %}is-{{ message.tags }}{% endif %}">
+                        <span class="msg-icon">{% if message.tags == 'error' %}⚠️{% elif message.tags == 'success' %}✓{% else %}ℹ{% endif %}</span>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
             </div>
         {% endif %}
 
+        <!-- Hero & Search Section -->
         <section class="pitches-hero" aria-labelledby="pitches-title">
             <div class="pitches-hero-copy">
-                <p class="pitches-eyebrow">FIND YOUR NEXT CONTRIBUTION</p>
-                <h1 id="pitches-title">Pitch board</h1>
-                <p>Explore opportunities that fit your role, or search the full pitch archive.</p>
+                <span class="pitches-eyebrow">THE TECHNOPHORE STUDENT PUBLICATION · EDITORIAL BOARD</span>
+                <h1 id="pitches-title">Pitch Opportunities & Assignments</h1>
+                <p class="hero-desc">Explore upcoming stories, event coverages, and recruitments across all publication desks.</p>
             </div>
+            
             <div class="pitches-search-panel">
-                <form method="get" action="{% url 'home:pitches' %}" role="search">
-                    <label for="pitch-search">Search pitches</label>
+                <form method="get" action="{% url 'home:pitches' %}" class="pitch-filter-form" role="search">
+                    <input type="hidden" name="tab" value="{{ active_tab }}">
                     <div class="pitches-search-control">
-                        <input id="pitch-search" type="search" name="q" value="{{ search_query }}" placeholder="Try a title, type, or location" autocomplete="off">
-                        <button type="submit" aria-label="Search pitches">Search</button>
+                        <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                        </svg>
+                        <input id="pitch-search" type="search" name="q" value="{{ search_query }}" placeholder="Search by title, coverage type, or venue..." autocomplete="off">
+                        
+                        <select name="role" class="role-filter-select" onchange="this.form.submit()">
+                            <option value="">All Desks / Roles</option>
+                            {% for role in pitch_role_choices %}
+                                <option value="{{ role }}" {% if role_filter|lower == role|lower %}selected{% endif %}>{{ role }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit" class="btn-search-submit">Search</button>
                     </div>
                 </form>
-                {% if search_query %}<a class="clear-search" href="{% url 'home:pitches' %}">Clear search</a>{% endif %}
+                {% if search_query or role_filter %}
+                    <div class="active-filters-row">
+                        <span>Active filter: {% if search_query %}“{{ search_query }}”{% endif %} {% if role_filter %}[Role: {{ role_filter }}]{% endif %}</span>
+                        <a class="clear-search-link" href="{% url 'home:pitches' %}?tab={{ active_tab }}">Clear Filters ×</a>
+                    </div>
+                {% endif %}
             </div>
         </section>
 
+        <!-- Summary Metric Cards -->
         <section class="pitches-summary" aria-label="Pitch availability summary">
             <div class="summary-card summary-card-dark">
-                <span>OPEN FOR YOU</span>
-                <strong>{{ open_pitch_count }}</strong>
-                <small>{% if member_position %}{{ member_position }} openings{% else %}pitches with available roles{% endif %}</small>
+                <span class="card-label">OPEN FOR VOLUNTEERS</span>
+                <strong class="card-num">{{ open_count }}</strong>
+                <small class="card-sub">Active recruitments available</small>
             </div>
             <div class="summary-card summary-card-light">
-                <span>AVAILABLE SPOTS</span>
-                <strong>{{ role_opening_count }}</strong>
-                <small>across your matching pitches</small>
+                <span class="card-label">MATCHED TO YOUR ROLE</span>
+                <strong class="card-num">{{ matched_count }}</strong>
+                <small class="card-sub">{% if member_position %}For {{ member_position }}{% else %}Open opportunities{% endif %}</small>
             </div>
-            <p class="position-note">
-                {% if member_position %}
-                    Showing opportunities for <strong>{{ member_position }}</strong>.
-                {% elif is_authenticated %}
-                    Add your position to your profile to see role-matched opportunities.
-                {% else %}
-                    Sign in to see openings matched to your position and volunteer.
-                {% endif %}
-            </p>
+            <div class="summary-card summary-card-accent">
+                <span class="card-label">AVAILABLE ROLE SPOTS</span>
+                <strong class="card-num">{{ role_opening_count }}</strong>
+                <small class="card-sub">Open contributor positions</small>
+            </div>
         </section>
 
-        {% if search_query %}
-            <section class="pitches-section" aria-labelledby="search-results-title">
-                <div class="pitches-section-heading">
-                    <div>
-                        <p class="pitches-eyebrow">PITCH ARCHIVE</p>
-                        <h2 id="search-results-title">Search results</h2>
-                    </div>
-                    <span>{{ search_results|length }} result{{ search_results|length|pluralize }} for “{{ search_query }}”</span>
-                </div>
-                <div class="pitch-card-grid">
-                    {% for pitch in search_results %}
-                        <article class="pitch-listing-card">
-                            <div class="pitch-card-topline">
-                                <span class="pitch-status-pill{% if not pitch.is_open_for_member %} is-closed{% endif %}">{{ pitch.search_status }}</span>
-                                <span class="pitch-card-type">{{ pitch.pitch_type }}</span>
+        <!-- Navigation Filter Tabs -->
+        <div class="pitches-tabs-bar">
+            <nav class="pitches-nav-tabs">
+                <a href="{% url 'home:pitches' %}?tab=all{% if search_query %}&q={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" 
+                   class="pitch-tab {% if active_tab == 'all' %}is-active{% endif %}">
+                    All Pitches ({{ all_count }})
+                </a>
+                <a href="{% url 'home:pitches' %}?tab=open{% if search_query %}&q={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" 
+                   class="pitch-tab {% if active_tab == 'open' %}is-active{% endif %}">
+                    Open for Volunteering ({{ open_count }})
+                </a>
+                {% if is_authenticated %}
+                    <a href="{% url 'home:pitches' %}?tab=matched{% if search_query %}&q={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" 
+                       class="pitch-tab {% if active_tab == 'matched' %}is-active{% endif %}">
+                        Matched to My Desk ({{ matched_count }})
+                    </a>
+                    <a href="{% url 'home:pitches' %}?tab=my{% if search_query %}&q={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" 
+                       class="pitch-tab {% if active_tab == 'my' %}is-active{% endif %}">
+                        My Created Pitches ({{ my_count }})
+                    </a>
+                {% endif %}
+            </nav>
+
+            {% if is_authenticated %}
+                <button type="button" class="btn-create-pitch-shortcut" onclick="document.getElementById('newPitchModal') ? document.getElementById('newPitchModal').classList.add('is-open') : window.location.href='{% url 'home:home' %}#submit-pitch'">
+                    + Submit a Pitch
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- Pitch Cards Grid -->
+        <section class="pitches-section" aria-labelledby="pitches-heading">
+            <div class="pitch-card-grid">
+                {% for pitch in pitches %}
+                    <article class="pitch-listing-card {% if not pitch.is_open_for_volunteers %}is-closed{% endif %}">
+                        <!-- Topline Badges -->
+                        <div class="pitch-card-topline">
+                            <div class="pitch-badge-left">
+                                <span class="pitch-status-pill status-{{ pitch.status|lower }}">
+                                    {% if pitch.is_open_for_volunteers %}Open for Volunteers{% else %}{{ pitch.status|title }}{% endif %}
+                                </span>
+                                <span class="pitch-card-type">{{ pitch.pitch_type|upper }}</span>
                             </div>
-                            <h3>{{ pitch.pitch_title }}</h3>
-                            <p class="pitch-card-meta">{{ pitch.target_date|date:"M j, Y" }} · {{ pitch.target_time|time:"g:i A" }}{% if pitch.location %} · {{ pitch.location }}{% endif %}</p>
-                            {% if pitch.additional_details %}<p class="pitch-card-details">{{ pitch.additional_details|truncatechars:180 }}</p>{% endif %}
-                            <div class="pitch-role-list" aria-label="Role availability">
+                            {% if pitch.pdf_letter_url %}
+                                <a href="{{ pitch.pdf_letter_url }}" target="_blank" rel="noopener noreferrer" class="pdf-attached-badge" title="Official pitch endorsement attached">
+                                    📄 PDF Attached ↗
+                                </a>
+                            {% endif %}
+                        </div>
+
+                        <!-- Title & Meta -->
+                        <h3 class="pitch-card-title">{{ pitch.pitch_title }}</h3>
+                        
+                        <div class="pitch-card-meta-list">
+                            <div class="meta-entry">
+                                📅 <span>{{ pitch.target_date|date:"M j, Y" }} · {{ pitch.target_time|time:"g:i A" }}</span>
+                            </div>
+                            <div class="meta-entry">
+                                📍 <span>{{ pitch.location|default:"CIT-U Campus / Online" }}</span>
+                            </div>
+                            <div class="meta-entry">
+                                ✍️ <span>Submitted by <strong>{{ pitch.submitter.name|default:"Editorial Desk" }}</strong></span>
+                            </div>
+                        </div>
+
+                        {% if pitch.additional_details %}
+                            <p class="pitch-card-details">{{ pitch.additional_details|truncatechars:160 }}</p>
+                        {% endif %}
+
+                        <!-- Roles Needed Breakdown -->
+                        <div class="pitch-role-box">
+                            <span class="role-box-title">Desk Openings:</span>
+                            <div class="pitch-role-chips">
                                 {% for role_need in pitch.all_open_roles %}
-                                    <span class="role-chip{% if role_need.role|lower != member_position|lower and member_position %} role-chip-muted{% endif %}">
-                                        {{ role_need.role }} · {{ role_need.available_slots }} left
+                                    <span class="role-chip {% if role_need.role|lower == member_position|lower %}role-chip-matched{% endif %}">
+                                        {{ role_need.role }} · <strong>{{ role_need.available_slots }}</strong> open
                                     </span>
                                 {% empty %}
-                                    <span class="role-chip role-chip-muted">{{ pitch.closed_reason }}</span>
-                                {% endfor %}
-                            </div>
-                            {% if pitch.is_open_for_member %}
-                                {% for role_need in pitch.open_roles %}
-                                    {% if is_authenticated %}
-                                        {% if role_need.role|lower in pitch.requested_roles %}
-                                            <span class="request-sent">Request sent for {{ role_need.role }}</span>
-                                        {% else %}
-                                            <form method="post" action="{% url 'home:pitches' %}" class="pitch-volunteer-form">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="pitch_id" value="{{ pitch.pitch_id }}">
-                                                <input type="hidden" name="role" value="{{ role_need.role }}">
-                                                <button type="submit" class="pitch-volunteer-button">Volunteer as {{ role_need.role }}</button>
-                                            </form>
-                                        {% endif %}
+                                    {% if pitch.is_open_for_volunteers %}
+                                        <span class="role-chip role-chip-open">Open call for all desks</span>
                                     {% else %}
-                                        <a class="pitch-volunteer-button" href="{% url 'login:login' %}">Sign in to volunteer</a>
+                                        <span class="role-chip role-chip-muted">All requested openings filled</span>
                                     {% endif %}
                                 {% endfor %}
-                            {% else %}
-                                <p class="pitch-closed-note">{{ pitch.closed_reason }}</p>
-                            {% endif %}
-                        </article>
-                    {% empty %}
-                        <div class="pitches-empty">
-                            <span aria-hidden="true">⌕</span>
-                            <h3>No matching pitches</h3>
-                            <p>Try a different title, type, or location.</p>
+                            </div>
                         </div>
-                    {% endfor %}
-                </div>
-            </section>
-        {% else %}
-            <section class="pitches-section" aria-labelledby="open-pitches-title">
-                <div class="pitches-section-heading">
-                    <div>
-                        <p class="pitches-eyebrow">MATCHED TO YOUR POSITION</p>
-                        <h2 id="open-pitches-title">Open pitches</h2>
-                    </div>
-                    <span>{{ open_pitch_count }} available</span>
-                </div>
-                <div class="pitch-card-grid">
-                    {% for pitch in open_pitches %}
-                        <article class="pitch-listing-card">
-                            <div class="pitch-card-topline">
-                                <span class="pitch-status-pill">Open</span>
-                                <span class="pitch-card-type">{{ pitch.pitch_type }}</span>
-                            </div>
-                            <h3>{{ pitch.pitch_title }}</h3>
-                            <p class="pitch-card-meta">{{ pitch.target_date|date:"M j, Y" }} · {{ pitch.target_time|time:"g:i A" }}{% if pitch.location %} · {{ pitch.location }}{% endif %}</p>
-                            {% if pitch.additional_details %}<p class="pitch-card-details">{{ pitch.additional_details|truncatechars:180 }}</p>{% endif %}
-                            <div class="pitch-role-list" aria-label="Matching openings">
-                                {% for role_need in pitch.open_roles %}
-                                    <span class="role-chip">{{ role_need.role }} · {{ role_need.available_slots }} spot{{ role_need.available_slots|pluralize }}</span>
-                                {% endfor %}
-                            </div>
-                            {% for role_need in pitch.open_roles %}
+
+                        <!-- Action Bar -->
+                        <div class="pitch-card-footer">
+                            <div class="pitch-card-actions">
+                                <button type="button" class="btn-pitch-details view-details-btn" 
+                                    data-title="{{ pitch.pitch_title }}" 
+                                    data-type="{{ pitch.pitch_type }}" 
+                                    data-date="{{ pitch.target_date|date:'F j, Y' }}" 
+                                    data-time="{{ pitch.target_time|time:'g:i A' }}" 
+                                    data-location="{{ pitch.location|default:'Location to be announced' }}" 
+                                    data-details="{{ pitch.additional_details|default:'No additional details provided.' }}" 
+                                    data-pdf="{{ pitch.pdf_letter_url|default:'' }}" 
+                                    data-id="{{ pitch.pitch_id }}">
+                                    View Details
+                                </button>
+
                                 {% if is_authenticated %}
-                                    {% if role_need.role|lower in pitch.requested_roles %}
-                                        <span class="request-sent">Request sent for {{ role_need.role }}</span>
+                                    {% if pitch.user_is_assigned %}
+                                        <a href="{% url 'home:home' %}#deliverables" class="badge-user-state is-assigned">
+                                            ✓ You are Assigned (View on Dashboard)
+                                        </a>
+                                    {% elif pitch.user_has_requested %}
+                                        <span class="badge-user-state is-pending">
+                                            ⏳ Volunteer Request Sent
+                                        </span>
+                                    {% elif pitch.is_open_for_volunteers %}
+                                        <button type="button" class="pitch-volunteer-button trigger-volunteer-modal" data-pitch-id="{{ pitch.pitch_id }}" data-title="{{ pitch.pitch_title }}">
+                                            Volunteer for Pitch →
+                                        </button>
                                     {% else %}
-                                        <form method="post" action="{% url 'home:pitches' %}" class="pitch-volunteer-form">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="pitch_id" value="{{ pitch.pitch_id }}">
-                                            <input type="hidden" name="role" value="{{ role_need.role }}">
-                                            <button type="submit" class="pitch-volunteer-button">Volunteer as {{ role_need.role }}</button>
-                                        </form>
+                                        <span class="badge-user-state is-closed">
+                                            Recruitment Closed
+                                        </span>
                                     {% endif %}
                                 {% else %}
-                                    <a class="pitch-volunteer-button" href="{% url 'login:login' %}">Sign in to volunteer</a>
+                                    <a class="pitch-volunteer-button" href="{% url 'login:login' %}">Sign in to Volunteer</a>
                                 {% endif %}
-                            {% endfor %}
-                        </article>
-                    {% empty %}
-                        <div class="pitches-empty">
-                            <span aria-hidden="true">✦</span>
-                            <h3>No openings for your position yet</h3>
-                            <p>Search all pitches to explore the archive, including closed opportunities.</p>
+                            </div>
                         </div>
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
+                    </article>
+                {% empty %}
+                    <div class="pitches-empty">
+                        <span class="empty-icon" aria-hidden="true">📋</span>
+                        <h3>No matching pitches found</h3>
+                        <p>Try adjusting your search query, choosing a different role filter, or switching tabs.</p>
+                        <a href="{% url 'home:pitches' %}" class="btn-reset-filters">Reset All Filters</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
     </main>
+
+    <!-- Pitch Details & Volunteer Modal -->
+    <div class="pitch-modal" id="pitchDetailModal" aria-hidden="true">
+        <section class="pitch-modal-content" role="dialog" aria-modal="true" aria-labelledby="modalPitchTitle">
+            <button type="button" class="modal-close" id="closePitchModal" aria-label="Close pitch details">&times;</button>
+            <span class="modal-eyebrow">PITCH BRIEFING & DETAILS</span>
+            <h2 id="modalPitchTitle" class="modal-main-title"></h2>
+            
+            <div class="pitch-detail-grid">
+                <div class="detail-cell">
+                    <span>Coverage Type</span>
+                    <strong id="modalPitchType"></strong>
+                </div>
+                <div class="detail-cell">
+                    <span>Target Date</span>
+                    <strong id="modalPitchDate"></strong>
+                </div>
+                <div class="detail-cell">
+                    <span>Scheduled Time</span>
+                    <strong id="modalPitchTime"></strong>
+                </div>
+                <div class="detail-cell">
+                    <span>Venue / Location</span>
+                    <strong id="modalPitchLocation"></strong>
+                </div>
+                <div class="detail-cell detail-wide">
+                    <span>Briefing & Notes</span>
+                    <p id="modalPitchDetails"></p>
+                </div>
+            </div>
+
+            <div class="modal-pdf-wrapper">
+                <a id="modalPitchPdf" class="modal-pdf" href="" target="_blank" rel="noopener" hidden>
+                    📄 View Attached Official Pitch Letter (PDF) ↗
+                </a>
+            </div>
+
+            <form method="POST" action="{% url 'home:pitches' %}" class="volunteer-form">
+                {% csrf_token %}
+                <input type="hidden" id="modalPitchId" name="pitch_id" value="">
+                
+                {% if user.is_authenticated %}
+                    <div class="volunteer-role-select-box">
+                        <label for="modalRoleSelect">Select Role you are volunteering for:</label>
+                        <select name="role" id="modalRoleSelect" class="role-select-input">
+                            {% for role in pitch_role_choices %}
+                                <option value="{{ role }}" {% if member_position|lower == role|lower %}selected{% endif %}>
+                                    {{ role }} {% if member_position|lower == role|lower %}(Your position){% endif %}
+                                </option>
+                            {% endfor %}
+                            <option value="Staff Contributor">Staff Contributor / General</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="volunteer-button">Submit Volunteer Application</button>
+                {% else %}
+                    <a class="volunteer-button" href="{% url 'login:login' %}">Sign in to Volunteer</a>
+                {% endif %}
+            </form>
+        </section>
+    </div>
+
+    <script src="{% static 'js/home/dashboard.js' %}?v=4" defer></script>
 </body>
 </html>
