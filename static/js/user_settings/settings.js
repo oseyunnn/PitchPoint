@@ -1,38 +1,61 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Password Field Special Configuration Toggle
-    const btnUpdatePass = document.getElementById('btnUpdatePass');
-    const passInitial = document.getElementById('passInitial');
-    const passExpanded = document.getElementById('passExpanded');
+    const tabItems = document.querySelectorAll('.settings-nav-list .tab-item');
+    const panels = document.querySelectorAll('.settings-panel');
 
-    if (btnUpdatePass && passInitial && passExpanded) {
-        btnUpdatePass.addEventListener('click', () => {
-            // Hide the single password row and reveal the 3-input change form
-            passInitial.style.display = 'none';
-            passExpanded.style.display = 'block';
+    function switchTab(targetId) {
+        if (!targetId) return;
+
+        tabItems.forEach(item => {
+            if (item.dataset.target === targetId) {
+                item.classList.add('is-active');
+            } else {
+                item.classList.remove('is-active');
+            }
+        });
+
+        panels.forEach(panel => {
+            if (panel.id === targetId) {
+                panel.classList.add('is-active');
+            } else {
+                panel.classList.remove('is-active');
+            }
         });
     }
 
-    // 2. Inline Text Fields Toggle (Username & Position)
-    const toggleBtns = document.querySelectorAll('.toggle-btn');
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const form = e.target.closest('form');
-            if (!form) return;
-
-            const input = form.querySelector('input[type="text"]');
-            if (!input) return;
-
-            // If input is read-only, enable editing
-            if (input.hasAttribute('readonly')) {
-                input.removeAttribute('readonly');
-                input.classList.remove('read-only-input');
-                input.classList.add('editable-input');
-                input.focus();
-                
-                // Change button state to submit the form
-                btn.textContent = 'SAVE';
-                btn.type = 'submit';
-            }
+    tabItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const target = item.dataset.target;
+            switchTab(target);
+            window.location.hash = target;
         });
     });
+
+    // Handle hash on page load (e.g. #tab-security)
+    if (window.location.hash) {
+        const hashTarget = window.location.hash.substring(1);
+        const matchedTab = document.querySelector(`.settings-nav-list [data-target="${hashTarget}"]`);
+        if (matchedTab) {
+            switchTab(hashTarget);
+        }
+    }
+
+    // Password validation on submit
+    const passwordForm = document.getElementById('passwordForm');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', (e) => {
+            const newPass = document.getElementById('newPasswordInput')?.value;
+            const confirmPass = document.getElementById('confirmPasswordInput')?.value;
+
+            if (newPass && newPass.length < 8) {
+                e.preventDefault();
+                alert('New password must be at least 8 characters long.');
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                e.preventDefault();
+                alert('New password and confirm password do not match.');
+            }
+        });
+    }
 });
