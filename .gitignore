@@ -3,3 +3,4 @@ pycache/
 *.pyc
 *sqlite3
 .env
+.ENCABO_FINAL_PROJECT
