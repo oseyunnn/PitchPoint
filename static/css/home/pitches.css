@@ -1,463 +1,579 @@
 .pitches-shell {
-    width: min(100% - 48px, 1240px);
-    margin: 32px auto 72px;
+    width: min(100% - 48px, 1400px);
+    margin: 24px auto 60px;
 }
 
+/* Messages */
 .pitches-messages {
     display: grid;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
 .pitches-message {
     margin: 0;
-    padding: 11px 15px;
-    border-radius: 10px;
-    background: #f5e8e7;
-    color: #70251f;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: #ecfdf5;
+    color: #065f46;
     font-size: 13px;
+    font-weight: 500;
+    border-left: 4px solid #10b981;
 }
 
+.pitches-message.is-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left-color: #ef4444;
+}
+
+/* ==========================================================================
+   Hero & Search Section
+   ========================================================================== */
 .pitches-hero {
     display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(360px, 1fr);
     align-items: center;
     gap: 28px;
-    padding: 34px;
-    border-radius: 26px;
-    background: #a71308;
-    color: #fff;
+    padding: 32px 36px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, #1e1e24 0%, #2b1f22 100%);
+    color: #ffffff;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 24px;
 }
 
 .pitches-eyebrow {
-    margin: 0 0 8px;
-    color: #a71308;
     font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 1.1px;
-    text-transform: uppercase;
-}
-
-.pitches-hero .pitches-eyebrow {
-    color: rgba(255, 255, 255, 0.78);
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #f87171;
+    display: block;
+    margin-bottom: 6px;
 }
 
 .pitches-hero h1 {
-    margin: 0;
-    font-size: clamp(30px, 4vw, 46px);
+    margin: 0 0 8px 0;
+    font-size: 28px;
     font-weight: 900;
-    line-height: 1;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
 }
 
-.pitches-hero-copy > p:last-child {
-    max-width: 430px;
-    margin: 12px 0 0;
-    color: rgba(255, 255, 255, 0.84);
+.hero-desc {
+    margin: 0;
     font-size: 14px;
-    line-height: 1.55;
+    color: #d1d5db;
+    line-height: 1.5;
 }
 
 .pitches-search-panel {
-    padding: 19px;
-    border-radius: 18px;
-    background: #fff;
-    color: #252223;
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    padding: 14px;
+    box-shadow: var(--shadow-sm);
 }
 
-.pitches-search-panel form > label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 11px;
-    font-weight: 900;
+.pitch-filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .pitches-search-control {
     display: flex;
+    align-items: center;
     gap: 8px;
+    position: relative;
 }
 
-.pitches-search-control input {
-    width: 100%;
+.search-icon {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.pitches-search-control input[type="search"] {
+    flex: 1;
     min-width: 0;
-    min-height: 46px;
-    padding: 0 14px;
-    border: 1px solid #dedbdc;
-    border-radius: 999px;
-    background: #f8f7f7;
-    color: #252223;
-    font: inherit;
+    padding: 10px 12px 10px 36px;
+    border: 1px solid var(--dashboard-line);
+    border-radius: var(--radius-full);
     font-size: 13px;
+    background: #f9fafb;
+    outline: none;
 }
 
-.pitches-search-control input:focus-visible {
-    outline: 2px solid #a71308;
-    outline-offset: 2px;
+.pitches-search-control input[type="search"]:focus {
+    border-color: var(--dashboard-red);
+    background: #ffffff;
 }
 
-.pitches-search-control button {
-    min-width: 92px;
-    padding: 0 18px;
-    border: 0;
-    border-radius: 999px;
-    background: #252223;
-    color: #fff;
-    cursor: pointer;
-    font: inherit;
+.role-filter-select {
+    padding: 10px 14px;
+    border: 1px solid var(--dashboard-line);
+    border-radius: var(--radius-full);
     font-size: 12px;
-    font-weight: 900;
-    transition: background-color 150ms ease, transform 150ms ease;
+    font-weight: 600;
+    color: #374151;
+    background: #f9fafb;
+    outline: none;
+    cursor: pointer;
 }
 
-.pitches-search-control button:hover {
-    background: #a71308;
-    transform: translateY(-1px);
+.btn-search-submit {
+    background: var(--dashboard-red);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 150ms ease;
 }
 
-.clear-search {
-    display: inline-block;
-    margin-top: 9px;
-    color: #777071;
+.btn-search-submit:hover {
+    background: var(--dashboard-red-hover);
+}
+
+.active-filters-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
     font-size: 11px;
-    text-underline-offset: 3px;
+    color: #4b5563;
 }
 
+.clear-search-link {
+    color: var(--dashboard-red);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* ==========================================================================
+   Summary Metric Cards
+   ========================================================================== */
 .pitches-summary {
     display: grid;
-    grid-template-columns: repeat(2, minmax(130px, 190px)) minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-    margin: 14px 0 36px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
 }
 
 .summary-card {
-    display: grid;
-    min-height: 98px;
-    align-content: center;
-    gap: 3px;
-    padding: 14px 18px;
-    border-radius: 17px;
-}
-
-.summary-card span {
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 0.6px;
-}
-
-.summary-card strong {
-    font-size: 30px;
-    font-weight: 900;
-    line-height: 1;
-}
-
-.summary-card small {
-    font-size: 10px;
-    font-weight: 700;
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
 }
 
 .summary-card-dark {
-    background: #252223;
-    color: #fff;
+    background: var(--dashboard-ink);
+    color: #ffffff;
 }
 
 .summary-card-light {
-    border: 1px solid #e8e4e4;
-    background: #f7f5f5;
-    color: #252223;
+    background: #ffffff;
+    border: 1px solid var(--dashboard-line);
+    color: #111827;
 }
 
-.position-note {
-    margin: 0 0 0 10px;
-    color: #727071;
+.summary-card-accent {
+    background: linear-gradient(135deg, var(--dashboard-red), #7f0d06);
+    color: #ffffff;
+}
+
+.card-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    opacity: 0.8;
+}
+
+.card-num {
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin: 4px 0;
+}
+
+.card-sub {
     font-size: 12px;
-    line-height: 1.5;
+    opacity: 0.75;
 }
 
-.position-note strong {
-    color: #252223;
-}
-
-.pitches-section {
-    margin-top: 26px;
-}
-
-.pitches-section-heading {
+/* ==========================================================================
+   Navigation Tabs Bar
+   ========================================================================== */
+.pitches-tabs-bar {
     display: flex;
-    align-items: end;
+    align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin: 0 2px 14px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
 }
 
-.pitches-section-heading .pitches-eyebrow {
-    margin-bottom: 4px;
+.pitches-nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
 }
 
-.pitches-section-heading h2 {
-    margin: 0;
-    color: #252223;
-    font-size: 23px;
-    font-weight: 900;
+.pitch-tab {
+    background: #ffffff;
+    border: 1px solid var(--dashboard-line);
+    color: #4b5563;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 150ms ease;
+    white-space: nowrap;
 }
 
-.pitches-section-heading > span {
-    padding-bottom: 3px;
-    color: #777071;
-    font-size: 11px;
+.pitch-tab:hover {
+    color: var(--dashboard-red);
+    border-color: #cbd5e1;
 }
 
+.pitch-tab.is-active {
+    background: var(--dashboard-red);
+    border-color: var(--dashboard-red);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(167, 19, 8, 0.25);
+}
+
+.btn-create-pitch-shortcut {
+    background: #ffffff;
+    border: 1px dashed var(--dashboard-red);
+    color: var(--dashboard-red);
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.btn-create-pitch-shortcut:hover {
+    background: var(--dashboard-red);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   Pitch Listing Cards Grid
+   ========================================================================== */
 .pitch-card-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 20px;
 }
 
 .pitch-listing-card {
+    background: #ffffff;
+    border: 1px solid var(--dashboard-line);
+    border-radius: var(--radius-md);
+    padding: 22px;
     display: flex;
-    min-width: 0;
     flex-direction: column;
-    align-items: flex-start;
-    padding: 19px;
-    border: 1px solid #e5e1e1;
-    border-radius: 17px;
-    background: #fff;
-    box-shadow: 0 5px 18px rgba(37, 34, 35, 0.045);
-    transition: box-shadow 160ms ease, transform 160ms ease;
+    justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+    transition: all 150ms ease;
 }
 
 .pitch-listing-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(37, 34, 35, 0.09);
+    box-shadow: var(--shadow-md);
+    border-color: #cbd5e1;
+}
+
+.pitch-listing-card.is-closed {
+    opacity: 0.85;
+    background: #fafafa;
 }
 
 .pitch-card-topline {
     display: flex;
-    width: 100%;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 9px;
-    margin-bottom: 14px;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.pitch-badge-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 .pitch-status-pill {
-    display: inline-flex;
-    min-height: 25px;
-    align-items: center;
-    padding: 4px 11px;
-    border-radius: 999px;
-    background: #252223;
-    color: #fff;
     font-size: 10px;
-    font-weight: 900;
-    line-height: 1;
-}
-
-.pitch-status-pill.is-closed {
-    background: #a71308;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .pitch-card-type {
-    overflow: hidden;
-    color: #777071;
     font-size: 10px;
     font-weight: 800;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #f3f4f6;
+    color: #374151;
+    letter-spacing: 0.5px;
+}
+
+.pdf-attached-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: #eff6ff;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    border: 1px solid #bfdbfe;
+    text-decoration: none;
     white-space: nowrap;
 }
 
-.pitch-listing-card h3 {
-    margin: 0;
-    color: #252223;
-    font-size: 17px;
-    font-weight: 900;
-    line-height: 1.3;
-    overflow-wrap: anywhere;
+.pdf-attached-badge:hover {
+    background: #dbeafe;
 }
 
-.pitch-card-meta {
-    margin: 8px 0 0;
-    color: #777071;
-    font-size: 11px;
-    line-height: 1.5;
+.pitch-card-title {
+    margin: 0 0 10px 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.3;
+}
+
+.pitch-card-meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: #4b5563;
+    margin-bottom: 12px;
 }
 
 .pitch-card-details {
-    display: -webkit-box;
-    overflow: hidden;
-    margin: 11px 0 0;
-    color: #555152;
-    font-size: 12px;
-    line-height: 1.55;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.45;
+    margin: 0 0 14px 0;
 }
 
-.pitch-role-list {
+.pitch-role-box {
+    background: var(--dashboard-surface);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 16px;
+}
+
+.role-box-title {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pitch-role-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-top: 15px;
 }
 
 .role-chip {
-    display: inline-flex;
-    min-height: 26px;
-    align-items: center;
-    padding: 5px 9px;
-    border: 1px solid #dedbdc;
-    border-radius: 999px;
-    background: #f7f5f5;
-    color: #333031;
-    font-size: 10px;
-    font-weight: 800;
+    background: #ffffff;
+    border: 1px solid var(--dashboard-line);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.role-chip strong {
+    color: var(--dashboard-red);
+}
+
+.role-chip.role-chip-matched {
+    background: var(--dashboard-red-light);
+    border-color: #fca5a5;
+    color: var(--dashboard-red);
+}
+
+.role-chip-open {
+    color: #2563eb;
+    background: #eff6ff;
+    border-color: #bfdbfe;
 }
 
 .role-chip-muted {
-    color: #777071;
-    font-weight: 700;
+    color: #9ca3af;
+    background: #f3f4f6;
 }
 
-.pitch-volunteer-form {
-    width: 100%;
+/* Card Actions */
+.pitch-card-footer {
+    padding-top: 12px;
+    border-top: 1px solid var(--dashboard-line);
     margin-top: auto;
-    padding-top: 14px;
+}
+
+.pitch-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-pitch-details {
+    flex: 1;
+    background: #f3f4f6;
+    border: 1px solid var(--dashboard-line);
+    color: #1f2937;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 150ms ease;
+}
+
+.btn-pitch-details:hover {
+    background: #e5e7eb;
 }
 
 .pitch-volunteer-button {
-    display: inline-flex;
-    min-height: 38px;
-    align-items: center;
-    justify-content: center;
+    flex: 1.2;
+    background: var(--dashboard-red);
+    border: none;
+    color: #ffffff;
     padding: 8px 14px;
-    border: 0;
-    border-radius: 999px;
-    background: #252223;
-    color: #fff;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
     cursor: pointer;
-    font: inherit;
-    font-size: 11px;
-    font-weight: 900;
+    text-align: center;
     text-decoration: none;
-    transition: background-color 150ms ease, transform 150ms ease;
-}
-
-.pitch-volunteer-form .pitch-volunteer-button {
-    width: 100%;
+    transition: background 150ms ease;
 }
 
 .pitch-volunteer-button:hover {
-    transform: translateY(-1px);
-    background: #a71308;
+    background: var(--dashboard-red-hover);
 }
 
-.request-sent {
-    display: inline-block;
-    margin-top: auto;
-    padding-top: 18px;
-    color: #6a5a27;
+.badge-user-state {
+    flex: 1.2;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
 }
 
-.pitch-closed-note {
-    margin: 14px 0 0;
-    color: #a71308;
-    font-size: 11px;
-    font-weight: 800;
+.badge-user-state.is-assigned {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
 }
 
+.badge-user-state.is-pending {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.badge-user-state.is-closed {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid var(--dashboard-line);
+}
+
+/* Empty State */
 .pitches-empty {
     grid-column: 1 / -1;
-    padding: 42px 18px;
-    border: 1px dashed #d8d3d4;
-    border-radius: 17px;
-    color: #727071;
+    background: #ffffff;
+    border: 1px dashed var(--dashboard-line);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
     text-align: center;
+    color: var(--dashboard-muted);
 }
 
-.pitches-empty > span {
+.pitches-empty .empty-icon {
+    font-size: 40px;
     display: block;
-    margin-bottom: 8px;
-    color: #a71308;
-    font-size: 28px;
+    margin-bottom: 12px;
 }
 
 .pitches-empty h3 {
-    margin: 0;
-    color: #252223;
-    font-size: 16px;
+    margin: 0 0 6px 0;
+    font-size: 18px;
+    color: #111827;
 }
 
 .pitches-empty p {
-    margin: 7px 0 0;
+    margin: 0 0 16px 0;
+    font-size: 14px;
+}
+
+.btn-reset-filters {
+    display: inline-block;
+    background: var(--dashboard-red);
+    color: #ffffff;
+    padding: 8px 18px;
+    border-radius: var(--radius-full);
     font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
 }
 
-.pitch-volunteer-button:focus-visible,
-.pitches-search-control button:focus-visible,
-.clear-search:focus-visible {
-    outline: 2px solid #a71308;
-    outline-offset: 3px;
-}
-
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
 @media (max-width: 900px) {
-    .pitch-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .pitches-hero {
-        grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr);
-        padding: 26px;
-    }
-}
-
-@media (max-width: 650px) {
-    .pitches-shell {
-        width: min(100% - 28px, 1240px);
-        margin-top: 20px;
-    }
-
-    .pitches-hero {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 20px;
-        padding: 22px;
-        border-radius: 20px;
-    }
-
-    .pitches-search-panel {
-        padding: 14px;
+        grid-template-columns: 1fr;
     }
 
     .pitches-summary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin-bottom: 30px;
-    }
-
-    .position-note {
-        grid-column: 1 / -1;
-        margin: 2px 4px 0;
-    }
-
-    .pitch-card-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .pitches-section-heading {
-        align-items: start;
+        grid-template-columns: 1fr;
     }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 600px) {
     .pitches-search-control {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pitch-card-actions {
         flex-direction: column;
     }
 
-    .pitches-search-control button {
-        min-height: 42px;
-    }
-
-    .pitches-summary {
-        grid-template-columns: minmax(0, 1fr);
+    .btn-pitch-details,
+    .pitch-volunteer-button,
+    .badge-user-state {
+        width: 100%;
     }
 }
