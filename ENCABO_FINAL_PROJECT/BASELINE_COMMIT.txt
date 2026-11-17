@@ -1,0 +1,1 @@
+bdb700df06b7cffe620ef0845110c6f2bddc54ed | oseyunnn | 2026-11-17 16:39:51 +0800 | chore: update .gitignore to include .ENCABO_FINAL_PROJECT
